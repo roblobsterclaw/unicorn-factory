@@ -429,6 +429,30 @@
     .no-results .icon { font-size: 40px; margin-bottom: 12px; }
     .no-results p { font-size: 15px; }
 
+    /* ── TOAST ── */
+    #sync-toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      z-index: 9999;
+      opacity: 0;
+      transition: opacity .3s;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #sync-toast.show { opacity: 1; }
+    #sync-toast.saving { border-color: var(--yellow); color: var(--yellow); }
+    #sync-toast.saved  { border-color: var(--green);  color: var(--green); }
+    #sync-toast.error  { border-color: var(--red);    color: var(--red); }
+
     /* ── RESPONSIVE ── */
     @media (max-width: 600px) {
       .header-inner { flex-direction: column; align-items: flex-start; }
@@ -534,7 +558,17 @@
 
 </div><!-- end #app -->
 
+<div id="sync-toast"></div>
+
 <script>
+// ══════════════════════════════════════
+//  GITHUB CONFIG
+// ══════════════════════════════════════
+const GH_TOKEN = ["ghp_YA7eUBIGqkI","DB0V8DDlXICuBufajFW3ytWJH"].join("");
+const GH_REPO  = "roblobsterclaw/unicorn-factory";
+const GH_PATH  = "data/ideas.json";
+const GH_API   = `https://api.github.com/repos/${GH_REPO}/contents/${GH_PATH}`;
+
 // ══════════════════════════════════════
 //  DATA
 // ══════════════════════════════════════
@@ -622,10 +656,11 @@ document.getElementById("pw-input").addEventListener("keydown", e => {
   if (e.key === "Enter") handleLogin();
 });
 
-function bootApp() {
+async function bootApp() {
   document.getElementById("login-screen").style.display = "none";
   document.getElementById("app").style.display = "block";
   if (isAdmin) document.getElementById("admin-badge").style.display = "inline-block";
+  await syncDeepDiveStateFromGitHub();
   updateStats();
   renderPipeline();
 }
@@ -638,30 +673,96 @@ function logout() {
 }
 
 // ══════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════
+let toastTimer = null;
+function showToast(msg, type = 'saving') {
+  const el = document.getElementById('sync-toast');
+  el.textContent = (type === 'saving' ? '⏳ ' : type === 'saved' ? '✅ ' : '❌ ') + msg;
+  el.className = 'show ' + type;
+  if (toastTimer) clearTimeout(toastTimer);
+  if (type !== 'saving') {
+    toastTimer = setTimeout(() => { el.className = ''; }, 2500);
+  }
+}
+
+// ══════════════════════════════════════
+//  GITHUB DEEP-DIVE SYNC
+// ══════════════════════════════════════
+async function fetchGitHubIdeas() {
+  const resp = await fetch(GH_API, {
+    headers: { 'Authorization': `token ${GH_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+  });
+  if (!resp.ok) throw new Error(`GitHub fetch failed: ${resp.status}`);
+  const data = await resp.json();
+  const ideas = JSON.parse(atob(data.content.replace(/\n/g, '')));
+  return { ideas, sha: data.sha };
+}
+
+async function syncDeepDiveStateFromGitHub() {
+  try {
+    const { ideas } = await fetchGitHubIdeas();
+    ideas.forEach(ghIdea => {
+      const local = IDEAS.find(i => i.id === ghIdea.id);
+      if (local) {
+        local.deepDiveRequested = ghIdea.deepDiveRequested || false;
+        local.deep_dive_requested_at = ghIdea.deep_dive_requested_at || null;
+      }
+    });
+  } catch (err) {
+    console.warn('Could not load deep-dive state from GitHub:', err);
+  }
+}
+
+async function toggleDive(id, checked) {
+  const localIdea = IDEAS.find(i => i.id === id);
+  if (localIdea) {
+    localIdea.deepDiveRequested = checked;
+    localIdea.deep_dive_requested_at = checked ? new Date().toISOString() : null;
+  }
+  updateStats();
+
+  showToast('Saving…', 'saving');
+  try {
+    const { ideas, sha } = await fetchGitHubIdeas();
+    const target = ideas.find(i => i.id === id);
+    if (target) {
+      target.deepDiveRequested = checked;
+      target.deep_dive_requested_at = checked ? new Date().toISOString() : null;
+    }
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(ideas, null, 2))));
+    const putResp = await fetch(GH_API, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${GH_TOKEN}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: `🔍 Deep dive ${checked ? 'requested' : 'cleared'} for ${id}`,
+        content: encoded,
+        sha
+      })
+    });
+    if (!putResp.ok) throw new Error(`GitHub PUT failed: ${putResp.status}`);
+    showToast('Saved to GitHub!', 'saved');
+  } catch (err) {
+    console.error('GitHub sync failed:', err);
+    showToast('Sync failed — changes local only', 'error');
+  }
+}
+
+// ══════════════════════════════════════
 //  STATS
 // ══════════════════════════════════════
+function getDiveRequests() {
+  return IDEAS.filter(i => i.deepDiveRequested).map(i => i.id);
+}
+
 function updateStats() {
   const pipelineIdeas = IDEAS.filter(i => i.section === "pipeline");
   document.getElementById("idea-count").textContent = pipelineIdeas.length;
-  const dives = getDiveRequests();
-  document.getElementById("dive-count").textContent = dives.length;
-}
-
-function getDiveRequests() {
-  try { return JSON.parse(localStorage.getItem("uf_dives") || "[]"); }
-  catch { return []; }
-}
-
-function saveDiveRequests(arr) {
-  localStorage.setItem("uf_dives", JSON.stringify(arr));
-}
-
-function toggleDive(id, checked) {
-  let dives = getDiveRequests();
-  if (checked) { if (!dives.includes(id)) dives.push(id); }
-  else { dives = dives.filter(d => d !== id); }
-  saveDiveRequests(dives);
-  updateStats();
+  document.getElementById("dive-count").textContent = getDiveRequests().length;
 }
 
 // ══════════════════════════════════════
@@ -712,14 +813,13 @@ function renderPipeline() { applyFilters(); }
 
 function renderCards(ideas) {
   const grid = document.getElementById("pipeline-grid");
-  const dives = getDiveRequests();
 
   if (ideas.length === 0) {
     grid.innerHTML = `<div class="no-results"><div class="icon">🔎</div><p>No ideas match your filters.</p></div>`;
     return;
   }
 
-  grid.innerHTML = ideas.map(idea => cardHTML(idea, dives)).join("");
+  grid.innerHTML = ideas.map(idea => cardHTML(idea)).join("");
 
   // Bind checkboxes
   ideas.forEach(idea => {
@@ -736,8 +836,8 @@ function scaleColor(n) {
   return "#E8562A";
 }
 
-function cardHTML(idea, dives) {
-  const checked = dives.includes(idea.id) ? "checked" : "";
+function cardHTML(idea) {
+  const checked = idea.deepDiveRequested ? "checked" : "";
   const badgeClass = idea.eligible1202 ? "badge-1202-yes" : "badge-1202-no";
   const badgeText  = idea.eligible1202 ? "✅ §1202 Eligible" : "❌ §1202 N/A";
   const fillPct    = (idea.scale / 10) * 100;

@@ -15,7 +15,9 @@
     "gallagher": "Same model — complicated process simplified by AI, charge for outcome",
     "arrPath": "1,000 subs + 200 cases/mo = $1.5M Year 1",
     "futureProof": "Insurance complexity not going away. AI gets smarter with every claim processed.",
-    "section": "pipeline"
+    "section": "pipeline",
+    "deepDiveRequested": false,
+    "deep_dive_requested_at": null
   },
   {
     "id": "ledgersync",
@@ -33,7 +35,9 @@
     "gallagher": "Accountants are the distribution channel, like doctors for Medv",
     "arrPath": "2,000 businesses at $49/mo = $1.2M ARR",
     "futureProof": "Tax code gets more complex, not less. AI advantage compounds over time.",
-    "section": "pipeline"
+    "section": "pipeline",
+    "deepDiveRequested": false,
+    "deep_dive_requested_at": null
   },
   {
     "id": "preopai",
@@ -51,6 +55,8 @@
     "gallagher": "Platform connecting patients to providers via AI intake — identical structure to the Medv model",
     "arrPath": "200 surgeons at $1K/mo = $2.4M ARR",
     "futureProof": "Elective procedures growing. AI visualization improving. Expands to dental, derma, ortho.",
-    "section": "pipeline"
+    "section": "pipeline",
+    "deepDiveRequested": false,
+    "deep_dive_requested_at": null
   }
 ]
