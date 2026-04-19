@@ -16,8 +16,9 @@
     "arrPath": "1,000 subs + 200 cases/mo = $1.5M Year 1",
     "futureProof": "Insurance complexity not going away. AI gets smarter with every claim processed.",
     "section": "pipeline",
-    "deepDiveRequested": false,
-    "deep_dive_requested_at": null
+    "deepDiveRequested": true,
+    "deep_dive_requested_at": "2026-04-19",
+    "deepDiveUrl": "https://roblobsterclaw.github.io/unicorn-factory/deep-dives/claimpilot-deep-dive-2026-04-19.html"
   },
   {
     "id": "ledgersync",
@@ -36,8 +37,9 @@
     "arrPath": "2,000 businesses at $49/mo = $1.2M ARR",
     "futureProof": "Tax code gets more complex, not less. AI advantage compounds over time.",
     "section": "pipeline",
-    "deepDiveRequested": false,
-    "deep_dive_requested_at": null
+    "deepDiveRequested": true,
+    "deep_dive_requested_at": "2026-04-19",
+    "deepDiveUrl": "https://roblobsterclaw.github.io/unicorn-factory/deep-dives/ledgersync-deep-dive-2026-04-19.html"
   },
   {
     "id": "preopai",
