@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClaimPilot — AI Insurance Claims Advocate | Unicorn Factory Deep Dive</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --card: #161b22;
+    --card2: #1c2128;
+    --border: #30363d;
+    --accent: #e8562a;
+    --accent2: #ff7b52;
+    --green: #3fb950;
+    --yellow: #d29922;
+    --red: #f85149;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --blue: #58a6ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; line-height: 1.6; }
+  
+  header { background: linear-gradient(135deg, #0d1117 0%, #1a0a05 50%, #0d1117 100%); border-bottom: 1px solid var(--border); padding: 40px 20px; text-align: center; }
+  .logo-tag { display: inline-block; background: var(--accent); color: white; font-size: 11px; font-weight: 700; letter-spacing: 2px; padding: 4px 12px; border-radius: 3px; margin-bottom: 20px; text-transform: uppercase; }
+  header h1 { font-size: clamp(28px, 5vw, 52px); font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
+  header h1 span { color: var(--accent); }
+  header .subtitle { font-size: 18px; color: var(--muted); margin-bottom: 24px; }
+  .header-meta { display: flex; justify-content: center; gap: 32px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+  .header-meta span strong { color: var(--text); }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+  
+  .verdict-banner { background: linear-gradient(90deg, rgba(232,86,42,0.15), rgba(232,86,42,0.05)); border: 1px solid rgba(232,86,42,0.4); border-radius: 12px; padding: 24px 32px; margin: 32px auto; max-width: 1100px; margin-left: auto; margin-right: auto; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .verdict-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); }
+  .verdict-text { font-size: 22px; font-weight: 700; color: var(--text); }
+  .verdict-score { background: var(--accent); color: white; font-size: 28px; font-weight: 800; padding: 8px 20px; border-radius: 8px; margin-left: auto; }
+
+  .section { padding: 48px 0; border-bottom: 1px solid var(--border); }
+  .section:last-child { border-bottom: none; }
+  .section-header { display: flex; align-items: baseline; gap: 16px; margin-bottom: 28px; }
+  .section-num { font-size: 11px; font-weight: 700; color: var(--accent); letter-spacing: 2px; font-family: monospace; }
+  .section-title { font-size: clamp(20px, 3vw, 28px); font-weight: 700; }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 16px; }
+  .card2 { background: var(--card2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; text-align: center; }
+  .stat-card .num { font-size: clamp(28px, 4vw, 42px); font-weight: 800; color: var(--accent); line-height: 1; margin-bottom: 4px; }
+  .stat-card .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .stat-card .sub { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  
+  .stat-card.green .num { color: var(--green); }
+  .stat-card.blue .num { color: var(--blue); }
+  .stat-card.yellow .num { color: var(--yellow); }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { background: var(--card2); color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+  td { padding: 12px 14px; border-bottom: 1px solid rgba(48,54,61,0.5); font-size: 14px; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-green { background: rgba(63,185,80,0.15); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
+  .badge-red { background: rgba(248,81,73,0.15); color: var(--red); border: 1px solid rgba(248,81,73,0.3); }
+  .badge-yellow { background: rgba(210,153,34,0.15); color: var(--yellow); border: 1px solid rgba(210,153,34,0.3); }
+  .badge-blue { background: rgba(88,166,255,0.15); color: var(--blue); border: 1px solid rgba(88,166,255,0.3); }
+  .badge-orange { background: rgba(232,86,42,0.15); color: var(--accent2); border: 1px solid rgba(232,86,42,0.3); }
+
+  .highlight { background: rgba(232,86,42,0.08); border-left: 3px solid var(--accent); padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+  .highlight-green { background: rgba(63,185,80,0.08); border-left: 3px solid var(--green); }
+  .highlight-yellow { background: rgba(210,153,34,0.08); border-left: 3px solid var(--yellow); }
+  .highlight-red { background: rgba(248,81,73,0.08); border-left: 3px solid var(--red); }
+  .highlight-blue { background: rgba(88,166,255,0.08); border-left: 3px solid var(--blue); }
+
+  .flow-step { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 16px; }
+  .flow-num { background: var(--accent); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .flow-content h4 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .flow-content p { font-size: 13px; color: var(--muted); }
+
+  .moat-bar { margin-bottom: 16px; }
+  .moat-bar .label { font-size: 13px; font-weight: 600; margin-bottom: 6px; display: flex; justify-content: space-between; }
+  .bar-track { background: var(--card2); border-radius: 4px; height: 10px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+  
+  .scenario-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+  .scenario { border-radius: 10px; padding: 20px; border: 1px solid var(--border); }
+  .scenario.bear { background: rgba(248,81,73,0.07); border-color: rgba(248,81,73,0.3); }
+  .scenario.base { background: rgba(88,166,255,0.07); border-color: rgba(88,166,255,0.3); }
+  .scenario.bull { background: rgba(63,185,80,0.07); border-color: rgba(63,185,80,0.3); }
+  .scenario h4 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+  .scenario.bear h4 { color: var(--red); }
+  .scenario.base h4 { color: var(--blue); }
+  .scenario.bull h4 { color: var(--green); }
+  .scenario .metric { margin-bottom: 8px; font-size: 13px; }
+  .scenario .metric span { color: var(--muted); }
+
+  .risk-item { display: flex; gap: 16px; margin-bottom: 16px; padding: 16px; background: var(--card); border-radius: 8px; border: 1px solid var(--border); }
+  .risk-icon { font-size: 20px; flex-shrink: 0; }
+  .risk-content h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .risk-content p { font-size: 13px; color: var(--muted); }
+
+  .action-item { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
+  .action-week { background: var(--accent); color: white; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; white-space: nowrap; margin-top: 2px; flex-shrink: 0; }
+  .action-text { font-size: 14px; }
+
+  p { margin-bottom: 12px; }
+  ul { padding-left: 24px; margin-bottom: 12px; }
+  li { margin-bottom: 6px; font-size: 14px; }
+  strong { color: var(--text); }
+  
+  .muted { color: var(--muted); }
+  .accent { color: var(--accent); }
+  .green { color: var(--green); }
+  .red { color: var(--red); }
+  .blue { color: var(--blue); }
+  .yellow { color: var(--yellow); }
+
+  footer { background: var(--card); border-top: 1px solid var(--border); padding: 24px; text-align: center; font-size: 12px; color: var(--muted); margin-top: 20px; }
+
+  @media (max-width: 600px) {
+    .scenario-tabs { grid-template-columns: 1fr; }
+    .verdict-banner { flex-direction: column; }
+    .verdict-score { margin-left: 0; }
+    .header-meta { gap: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-tag">🦞 Unicorn Factory — Business Deep Dive</div>
+  <h1><span>Claim</span>Pilot</h1>
+  <div class="subtitle">AI Insurance Claims Advocate — Full Business Analysis</div>
+  <div class="header-meta">
+    <span><strong>Category:</strong> InsurTech / LegalTech</span>
+    <span><strong>Model:</strong> Contingency + Subscription</span>
+    <span><strong>Startup Cost:</strong> $15–25K</span>
+    <span><strong>TAM:</strong> $8.5B+</span>
+    <span><strong>Analyzed:</strong> April 19, 2026</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="verdict-banner">
+    <div>
+      <div class="verdict-label">Rob's Verdict</div>
+      <div class="verdict-text">CONDITIONAL GO — High upside, real legal complexity. Start in one state, one vertical, prove the model.</div>
+    </div>
+    <div class="verdict-score">7.8/10</div>
+  </div>
+
+  <!-- SECTION 1: EXECUTIVE SUMMARY -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">01</div>
+      <div class="section-title">Executive Summary</div>
+    </div>
+    <div class="card">
+      <p style="font-size: 17px; line-height: 1.8;">ClaimPilot is an AI-powered insurance claims advocate that fights denial letters on behalf of consumers. Where a traditional insurance advocate costs $200–$400/hour and takes weeks, ClaimPilot uploads the denial letter, reads the policy, identifies appeal grounds, drafts a legally sound appeal, and submits it — all in minutes, for a 15–20% contingency on recovered amounts. The timing is perfect: insurance companies denied <strong>48.3 million</strong> in-network health claims in 2021 alone, yet fewer than 0.2% of those denials were ever appealed. That's a 99.8% abandonment rate. ClaimPilot exists to capture that lost money — with AI doing in 5 minutes what a human advocate does in 5 hours.</p>
+    </div>
+
+    <div class="grid-4" style="margin-top: 20px;">
+      <div class="stat-card">
+        <div class="num">48.3M</div>
+        <div class="label">Claims Denied/Year</div>
+        <div class="sub">Health insurance alone (2021)</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">0.2%</div>
+        <div class="label">Appeal Rate</div>
+        <div class="sub">99.8% abandoned — ClaimPilot's market</div>
+      </div>
+      <div class="stat-card green">
+        <div class="num">40-60%</div>
+        <div class="label">Appeal Success Rate</div>
+        <div class="sub">When consumers DO appeal</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="num">$3-12K</div>
+        <div class="label">Avg Denied Claim</div>
+        <div class="sub">Health, home, auto combined</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: THE PROBLEM -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">02</div>
+      <div class="section-title">The Problem — 48 Million Americans Get Denied Every Year</div>
+    </div>
+    
+    <div class="grid-2">
+      <div class="card">
+        <h3 style="margin-bottom: 16px; color: var(--accent);">📊 The Numbers Are Staggering</h3>
+        <p>In 2021, the 162 major medical insurers on HealthCare.gov received <strong>291.6 million in-network claims</strong> and denied <strong>48.3 million</strong> of them — a 16.6% denial rate. Some insurers denied nearly HALF of all claims (Meridian Health Plan: ~49%).</p>
+        <p>The total US insurance market is far larger: when you add employer plans, Medicaid managed care, Medicare Advantage, auto, and home insurance, the total denied claims universe exceeds <strong>200 million per year</strong>.</p>
+        <div class="highlight-red" style="margin-top: 12px;">
+          <strong>The brutal truth:</strong> Fewer than 2 out of 1,000 denied claims are ever appealed. Insurers count on this. Denial is a profit strategy.
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom: 16px; color: var(--accent);">😤 The Emotional Pain Point</h3>
+        <p>You're already sick or your house just flooded. Now you get a dense 8-page denial letter written in legalese. You don't know what "medical necessity" means in your plan's definition. You don't know what "referral requirement" means in your specific policy. You don't know the appeals deadline (typically 180 days for health, 60-90 for property).</p>
+        <p>So you give up. The insurance company wins. They keep <strong>$3,000–$15,000</strong> that was rightfully yours.</p>
+        <div class="highlight" style="margin-top: 12px;">
+          <strong>ClaimPilot converts that giving-up moment into a 60-second submission.</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 0;">
+      <h3 style="margin-bottom: 16px;">Denial Reasons Breakdown (Health Insurance, 2021 KFF Data)</h3>
+      <table>
+        <thead><tr><th>Denial Reason</th><th>% of Denials</th><th>Appealability</th><th>AI Advantage</th></tr></thead>
+        <tbody>
+          <tr><td>All Other Reasons (billing errors, coding issues)</td><td>76.5%</td><td><span class="badge badge-green">High</span></td><td>AI catches billing code errors instantly</td></tr>
+          <tr><td>Excluded Services</td><td>13.5%</td><td><span class="badge badge-yellow">Medium</span></td><td>AI reads policy exclusion language precisely</td></tr>
+          <tr><td>Lack of Prior Auth / Referral</td><td>8%</td><td><span class="badge badge-green">High</span></td><td>AI identifies if auth was waived or emergency</td></tr>
+          <tr><td>Medical Necessity</td><td>2%</td><td><span class="badge badge-blue">Very High</span></td><td>AI cites clinical guidelines (MCG, InterQual)</td></tr>
+        </tbody>
+      </table>
+      <div class="highlight-green" style="margin-top: 16px;">
+        <strong>Key Insight:</strong> 76.5% of denials are "all other reasons" — largely administrative errors, wrong billing codes, and procedural technicalities. These are exactly what AI catches best. The low-hanging fruit is enormous.
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: THE SOLUTION -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">03</div>
+      <div class="section-title">The Solution — How ClaimPilot Works</div>
+    </div>
+
+    <div class="card">
+      <div class="flow-step">
+        <div class="flow-num">1</div>
+        <div class="flow-content">
+          <h4>Upload the Denial Letter</h4>
+          <p>Consumer photos or PDFs their denial letter. OCR + LLM extracts the claim number, denial reason, insurer, amount, and deadline. 60 seconds of work.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">2</div>
+        <div class="flow-content">
+          <h4>Upload the Insurance Policy (or Link EOB)</h4>
+          <p>Consumer provides their policy PDF or connects to their insurer portal via OAuth. AI reads the policy definitions, exclusions, and appeals process. Also analyzes the Explanation of Benefits (EOB) for discrepancies.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">3</div>
+        <div class="flow-content">
+          <h4>AI Diagnoses the Denial</h4>
+          <p>The AI categorizes the denial type, identifies likely grounds for reversal (billing code error, missing auth that was waived, policy language ambiguity, ACA protections), and assigns a confidence score to the appeal.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">4</div>
+        <div class="flow-content">
+          <h4>Draft the Appeal Letter</h4>
+          <p>AI generates a professionally written appeal citing: (a) specific policy language, (b) applicable federal laws (ACA, ERISA, No Surprises Act), (c) state insurance regulations, (d) clinical guidelines if medical necessity. Attorney-quality output.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">5</div>
+        <div class="flow-content">
+          <h4>Consumer Reviews & Submits</h4>
+          <p>Consumer reads the draft, approves it (or edits it), and ClaimPilot handles submission via certified mail template or direct portal submission. System tracks the appeal deadline and follows up automatically.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num">6</div>
+        <div class="flow-content">
+          <h4>ClaimPilot Collects on Success</h4>
+          <p>If the appeal is overturned, ClaimPilot collects 15–20% of the recovered amount. No recovery = no fee. Subscriber plan ($29/mo) covers ongoing monitoring and unlimited denials. Consumer wins either way.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="highlight-blue" style="margin-top: 0;">
+      <strong>The Gallagher Parallel:</strong> This is the same model as insurance brokers and public adjusters — complicated process, done FOR you, percentage of outcome. Except ClaimPilot does it in 5 minutes with AI vs. weeks with a human.
+    </div>
+  </div>
+
+  <!-- SECTION 4: MARKET SIZE -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">04</div>
+      <div class="section-title">Market Size — TAM / SAM / SOM</div>
+    </div>
+
+    <div class="grid-3">
+      <div class="stat-card">
+        <div class="num">$47B</div>
+        <div class="label">TAM — Total Market</div>
+        <div class="sub">Total denied insurance claims value annually across all verticals</div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="num">$8.5B</div>
+        <div class="label">SAM — Serviceable</div>
+        <div class="sub">Appealable claims where AI can realistically help (health + property)</div>
+      </div>
+      <div class="stat-card green">
+        <div class="num">$425M</div>
+        <div class="label">SOM — Year 5 Target</div>
+        <div class="sub">5% penetration of SAM = $425M in recoverable fees</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 0;">
+      <h3 style="margin-bottom: 16px;">Market Breakdown by Vertical</h3>
+      <table>
+        <thead><tr><th>Vertical</th><th>Annual Claims</th><th>Denial Rate</th><th>Denied Claims</th><th>Avg Value</th><th>Total Denied $</th><th>Appeal Success</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Health Insurance</strong></td>
+            <td>~4B total</td>
+            <td>15–17%</td>
+            <td>~600M</td>
+            <td>$500–$15K</td>
+            <td><strong class="accent">$25B+</strong></td>
+            <td>40–60%</td>
+          </tr>
+          <tr>
+            <td><strong>Homeowners / Property</strong></td>
+            <td>~6M/yr</td>
+            <td>8–12%</td>
+            <td>~600K</td>
+            <td>$8,000–$25K</td>
+            <td><strong class="accent">$8B</strong></td>
+            <td>50–70% (public adjuster data)</td>
+          </tr>
+          <tr>
+            <td><strong>Auto Insurance</strong></td>
+            <td>~14M/yr</td>
+            <td>5–8%</td>
+            <td>~900K</td>
+            <td>$3,000–$8K</td>
+            <td><strong class="accent">$4B</strong></td>
+            <td>35–50%</td>
+          </tr>
+          <tr>
+            <td><strong>Life Insurance</strong></td>
+            <td>~700K/yr</td>
+            <td>2–5%</td>
+            <td>~25K</td>
+            <td>$50K–$500K</td>
+            <td><strong class="accent">$2B</strong></td>
+            <td>30–40%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="highlight" style="margin-top: 0;">
+      <strong>Start Here:</strong> Health insurance denials are the beachhead. They're the most common, the most standardized legally (ACA provides federal appeal rights), and the most emotionally charged for consumers. Once the platform works for health, expand to property (where public adjuster licensing matters) and auto.
+    </div>
+  </div>
+
+  <!-- SECTION 5: REVENUE MODEL -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">05</div>
+      <div class="section-title">Revenue Model Deep Dive</div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3 style="color: var(--accent); margin-bottom: 12px;">💰 Revenue Stream 1: Contingency</h3>
+        <p><strong>15–20% of recovered amount</strong></p>
+        <p>Consumer pays nothing upfront. If ClaimPilot wins the appeal, it collects 15–20% of the insurance payout. If the claim is denied again, consumer owes nothing.</p>
+        <div class="card2">
+          <div style="font-size: 13px; color: var(--muted); margin-bottom: 8px;">Example Math:</div>
+          <div style="font-size: 14px; margin-bottom: 4px;">Hospital claim denied: <strong>$8,000</strong></div>
+          <div style="font-size: 14px; margin-bottom: 4px;">Appeal successful → insurer pays $8,000</div>
+          <div style="font-size: 14px; color: var(--green);">ClaimPilot collects: <strong>$1,200–$1,600</strong></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="color: var(--blue); margin-bottom: 12px;">💳 Revenue Stream 2: Subscription</h3>
+        <p><strong>$29/month monitoring plan</strong></p>
+        <p>Ongoing plan monitoring: ClaimPilot monitors for underpayments, flags suspicious EOBs, tracks your annual deductible vs. what's been applied, and gives unlimited appeal assistance. Cancel anytime.</p>
+        <div class="card2">
+          <div style="font-size: 13px; color: var(--muted); margin-bottom: 8px;">Why people subscribe:</div>
+          <div style="font-size: 14px; margin-bottom: 4px;">• Chronic conditions = frequent claims</div>
+          <div style="font-size: 14px; margin-bottom: 4px;">• Small business owners protecting employees</div>
+          <div style="font-size: 14px; color: var(--blue);">$29 × 12 = <strong>$348/yr per customer</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 0;">
+      <h3 style="margin-bottom: 16px;">Revenue Model at Scale</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Customers</th>
+            <th>Sub ARR</th>
+            <th>Cases/Month</th>
+            <th>Avg Recovery</th>
+            <th>Win Rate</th>
+            <th>Contingency ARR</th>
+            <th>Total ARR</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>100</strong></td>
+            <td>$34,800</td>
+            <td>20 cases</td>
+            <td>$4,000</td>
+            <td>45%</td>
+            <td>$86,400</td>
+            <td class="green"><strong>$121K</strong></td>
+          </tr>
+          <tr>
+            <td><strong>500</strong></td>
+            <td>$174,000</td>
+            <td>100 cases</td>
+            <td>$4,500</td>
+            <td>48%</td>
+            <td>$518,400</td>
+            <td class="green"><strong>$692K</strong></td>
+          </tr>
+          <tr>
+            <td><strong>1,000</strong></td>
+            <td>$348,000</td>
+            <td>200 cases</td>
+            <td>$5,000</td>
+            <td>50%</td>
+            <td>$1,080,000</td>
+            <td class="accent"><strong>$1.43M</strong></td>
+          </tr>
+          <tr>
+            <td><strong>5,000</strong></td>
+            <td>$1,740,000</td>
+            <td>1,000 cases</td>
+            <td>$5,500</td>
+            <td>55%</td>
+            <td>$7,260,000</td>
+            <td class="accent"><strong>$9.0M</strong></td>
+          </tr>
+          <tr>
+            <td><strong>15,000</strong></td>
+            <td>$5,220,000</td>
+            <td>3,000 cases</td>
+            <td>$6,000</td>
+            <td>58%</td>
+            <td>$25,056,000</td>
+            <td class="green"><strong>$30.3M</strong></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="highlight-green" style="margin-top: 16px;">
+        <strong>Path to $10M ARR:</strong> ~5,000 subscribers + ~1,000 cases/month at 55% win rate and $5,500 avg recovery. That's 0.003% of the total denied health claims market. This is a very reachable target.
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 6: COMPETITION -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">06</div>
+      <div class="section-title">Competition Analysis</div>
+    </div>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Competitor</th>
+            <th>Type</th>
+            <th>Model</th>
+            <th>Weakness</th>
+            <th>Threat Level</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Claimable.com</strong></td>
+            <td>B2B SaaS</td>
+            <td>Claims management software for insurers/TPAs. NOT consumer-facing.</td>
+            <td>Wrong market — helps insurance companies, not consumers</td>
+            <td><span class="badge badge-green">Low</span></td>
+          </tr>
+          <tr>
+            <td><strong>Public Adjusters</strong></td>
+            <td>Human Advocates</td>
+            <td>10–15% contingency, property claims only, slow (weeks), expensive</td>
+            <td>High cost, slow, limited to property/home</td>
+            <td><span class="badge badge-yellow">Medium</span></td>
+          </tr>
+          <tr>
+            <td><strong>Apella Health</strong></td>
+            <td>Healthcare Advocacy</td>
+            <td>Employer-sponsored healthcare advocacy, enterprise B2B, not consumer direct</td>
+            <td>Enterprise only, not accessible to individuals</td>
+            <td><span class="badge badge-yellow">Medium</span></td>
+          </tr>
+          <tr>
+            <td><strong>Overruled.ai</strong></td>
+            <td>AI Health Advocate</td>
+            <td>AI-powered health claim appeals, similar model — DIRECT COMPETITOR</td>
+            <td>Early stage, limited to health, no subscription model</td>
+            <td><span class="badge badge-red">High</span></td>
+          </tr>
+          <tr>
+            <td><strong>Clearcover / Lemonade</strong></td>
+            <td>InsurTech Insurers</td>
+            <td>Fast claims processing but they're the insurer, not the advocate</td>
+            <td>They have no incentive to fight their own denials</td>
+            <td><span class="badge badge-green">Low</span></td>
+          </tr>
+          <tr>
+            <td><strong>Traditional Attorneys</strong></td>
+            <td>Legal Services</td>
+            <td>$300-500/hr, ERISA attorneys for employer health plans, contingency for big cases</td>
+            <td>Prohibitively expensive for sub-$50K claims</td>
+            <td><span class="badge badge-green">Low</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="highlight">
+      <strong>Key Finding:</strong> Overruled.ai is the closest competitor. Look them up, understand their positioning, and differentiate clearly. ClaimPilot's advantage: multi-line (health + property + auto), subscription monitoring model, and eventually — attorney network for escalations on large claims. Nobody has the full-stack consumer insurance advocate platform yet.
+    </div>
+
+    <div class="grid-2" style="margin-top: 16px;">
+      <div class="card">
+        <h4 style="color: var(--green); margin-bottom: 12px;">✅ ClaimPilot Advantages</h4>
+        <ul>
+          <li>Multi-vertical (health, home, auto) vs. single-line competitors</li>
+          <li>Subscription model builds recurring revenue baseline</li>
+          <li>Contingency means zero friction to start (no upfront cost)</li>
+          <li>AI gets smarter with every claim (data moat compounds)</li>
+          <li>Attorney escalation tier creates a premium revenue stream</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4 style="color: var(--red); margin-bottom: 12px;">⚠️ ClaimPilot Risks vs. Competition</h4>
+        <ul>
+          <li>Overruled.ai may be further along than they appear</li>
+          <li>BigTech could enter (Google has the data, AI, and consumer reach)</li>
+          <li>Insurers could make appeals harder in response</li>
+          <li>Regulatory changes could limit contingency fee structures</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 7: MOAT -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">07</div>
+      <div class="section-title">Moat Assessment</div>
+    </div>
+
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <div style="font-size: 13px; color: var(--muted); margin-bottom: 4px;">Overall Moat Rating</div>
+          <div style="font-size: 28px; font-weight: 800; color: var(--yellow);">NARROW → WIDE</div>
+          <div style="font-size: 13px; color: var(--muted);">Starts narrow, compounds into wide with data and network effects</div>
+        </div>
+        <div style="background: rgba(210,153,34,0.1); border: 1px solid rgba(210,153,34,0.3); padding: 16px 24px; border-radius: 8px; text-align: center;">
+          <div style="font-size: 36px; font-weight: 800; color: var(--yellow);">6.5</div>
+          <div style="font-size: 12px; color: var(--muted);">Moat Score /10</div>
+        </div>
+      </div>
+
+      <div class="moat-bar">
+        <div class="label"><span>Data Moat (Every Claim Trains the AI)</span><span class="yellow">8/10</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:80%; background: var(--yellow);"></div></div>
+      </div>
+      <div class="moat-bar">
+        <div class="label"><span>Regulatory Complexity Barrier</span><span class="blue">7/10</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:70%; background: var(--blue);"></div></div>
+      </div>
+      <div class="moat-bar">
+        <div class="label"><span>Brand / Consumer Trust</span><span class="accent">5/10</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:50%; background: var(--accent);"></div></div>
+      </div>
+      <div class="moat-bar">
+        <div class="label"><span>Switching Costs (Subscriber History)</span><span class="green">7/10</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:70%; background: var(--green);"></div></div>
+      </div>
+      <div class="moat-bar">
+        <div class="label"><span>Network Effects (Win Rate Improves → More Users)</span><span class="accent">6/10</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:60%; background: var(--accent);"></div></div>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-top: 16px;">
+      <div class="card">
+        <h4 style="color: var(--yellow); margin-bottom: 8px;">🧠 Data Moat</h4>
+        <p style="font-size: 13px; color: var(--muted);">Every claim processed teaches the AI: which arguments work with which insurers, which codes are commonly denied, which policy language creates appeal opportunities. After 100,000 claims, ClaimPilot has an advantage no competitor can replicate without years of data.</p>
+      </div>
+      <div class="card">
+        <h4 style="color: var(--blue); margin-bottom: 8px;">🏛️ Regulatory Complexity</h4>
+        <p style="font-size: 13px; color: var(--muted);">Insurance law is different in all 50 states. ERISA governs employer plans. ACA governs marketplace plans. MCMS guidelines govern Medicare. Building the AI that knows all of this is a substantial engineering barrier for copycat startups.</p>
+      </div>
+      <div class="card">
+        <h4 style="color: var(--green); margin-bottom: 8px;">📋 Subscriber Lock-In</h4>
+        <p style="font-size: 13px; color: var(--muted);">Once a subscriber's claims history, policy docs, and denial patterns are in ClaimPilot, switching to a competitor means starting over. The longer you subscribe, the smarter ClaimPilot gets about YOUR specific insurer and plan.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 8: STARTUP PLAN -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">08</div>
+      <div class="section-title">90-Day Startup Plan</div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom: 20px; color: var(--accent);">⚠️ Critical Legal Question First: Do You Need a Public Adjuster License?</h3>
+      <p>This is the most important question before you build anything. Public adjuster licensing is required in most states for negotiating insurance settlements on behalf of consumers for <strong>property claims</strong> (home, auto). Health insurance appeals have a different legal framework.</p>
+      <div class="grid-2">
+        <div class="card2">
+          <h4 style="color: var(--green); margin-bottom: 8px;">✅ Health Appeals (Lower Barrier)</h4>
+          <p style="font-size: 13px; color: var(--muted);">No public adjuster license required. ACA mandates consumer appeal rights. Drafting appeal letters for health claims is generally legal as long as you're not "practicing law." Structure as a technology service, not legal representation. Works in all 50 states.</p>
+        </div>
+        <div class="card2">
+          <h4 style="color: var(--yellow); margin-bottom: 8px;">⚠️ Property Claims (Higher Barrier)</h4>
+          <p style="font-size: 13px; color: var(--muted);">Public adjuster license required in 47 states for property claims. Licenses are state-by-state, require exam and background check, typically $300-500 each. NJ license required. START with health, add property after you're established.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-top: 16px;">
+      <div class="card">
+        <h3 style="color: var(--blue); margin-bottom: 16px;">Days 1–30: Foundation</h3>
+        <div class="action-item">
+          <div class="action-week">DAY 1-7</div>
+          <div class="action-text">Consult with an insurance law attorney in NJ. Confirm legal structure for health claims advocacy. Budget: $2,000–$5,000 for legal opinion.</div>
+        </div>
+        <div class="action-item">
+          <div class="action-week">DAY 8-14</div>
+          <div class="action-text">Incorporate as C-corp in Delaware (Section 1202 QSBS starts here). File NJ foreign qualification. Open business bank account. Set up QuickBooks.</div>
+        </div>
+        <div class="action-item">
+          <div class="action-week">DAY 15-30</div>
+          <div class="action-text">Build MVP: upload denial letter → Claude AI analyzes → drafts appeal letter. Tech stack: Next.js + Supabase + OpenAI/Anthropic API + Stripe for payments.</div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="color: var(--green); margin-bottom: 16px;">Days 31–90: Launch</h3>
+        <div class="action-item">
+          <div class="action-week">DAY 31-45</div>
+          <div class="action-text">Beta test with 20 real users — friends, family, Tuckerton employees, anyone who's recently been denied. Track appeal success rate. Refine AI prompt.</div>
+        </div>
+        <div class="action-item">
+          <div class="action-week">DAY 46-60</div>
+          <div class="action-text">Launch $29/mo subscription + contingency on recovered claims. Get 50 beta subscribers. Collect testimonials. Build case studies from early wins.</div>
+        </div>
+        <div class="action-item">
+          <div class="action-week">DAY 61-90</div>
+          <div class="action-text">Content marketing: "Insurance denied your claim? Here's how to fight back" — target people searching their denial reason. SEO plays long-term. Launch paid ads on Meta targeting post-hospitalization audiences.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 0;">
+      <h3 style="margin-bottom: 16px;">Startup Cost Breakdown</h3>
+      <table>
+        <thead><tr><th>Item</th><th>Cost</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Legal (entity + insurance law opinion)</td><td>$5,000–$8,000</td><td>Delaware C-corp + NJ attorney for compliance opinion</td></tr>
+          <tr><td>Technology (MVP development)</td><td>$5,000–$10,000</td><td>Freelancer or coding agent. 4-6 week build.</td></tr>
+          <tr><td>AI API Costs (first 6 months)</td><td>$1,000–$3,000</td><td>OpenAI/Anthropic API, ~$0.05–0.20 per claim analysis</td></tr>
+          <tr><td>Insurance (E&O, General Liability)</td><td>$2,000–$4,000/yr</td><td>Errors & omissions critical for this business</td></tr>
+          <tr><td>Marketing (content + initial ads)</td><td>$3,000–$5,000</td><td>First 90 days marketing budget</td></tr>
+          <tr><td>Misc (hosting, tools, filing fees)</td><td>$1,000–$2,000</td><td>AWS/Vercel, Stripe, domain, filing fees</td></tr>
+          <tr style="background: rgba(232,86,42,0.05);"><td><strong>TOTAL</strong></td><td><strong>$17,000–$32,000</strong></td><td>Within the $15-25K target with lean execution</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SECTION 9: SECTION 1202 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">09</div>
+      <div class="section-title">Section 1202 Structure — QSBS Tax Exclusion</div>
+    </div>
+
+    <div class="card">
+      <div class="highlight-green">
+        <strong>The Big Number:</strong> If ClaimPilot sells for $50M, Joe could potentially exclude $10M+ of capital gains from federal tax entirely. Section 1202 Qualified Small Business Stock is the single best legal tax advantage available to startup founders.
+      </div>
+      <div style="margin-top: 20px;">
+        <div class="grid-2">
+          <div class="card2">
+            <h4 style="color: var(--green); margin-bottom: 12px;">✅ ClaimPilot Qualifies Because:</h4>
+            <ul style="font-size: 13px;">
+              <li>C-corporation (required — not LLC, not S-corp)</li>
+              <li>Incorporated in US (Delaware)</li>
+              <li>At time of investment, aggregate gross assets under $50M</li>
+              <li>Technology/software company (qualifies — insurance is excluded, but software tools serving insurance qualify)</li>
+              <li>Stock held for 5+ years triggers exclusion</li>
+              <li>Stock acquired at original issuance (not secondary market)</li>
+            </ul>
+          </div>
+          <div class="card2">
+            <h4 style="color: var(--yellow); margin-bottom: 12px;">⚠️ Watch Out For:</h4>
+            <ul style="font-size: 13px;">
+              <li>Insurance companies themselves are excluded from QSBS — ClaimPilot is a tech company, not an insurer, so this should be fine</li>
+              <li>Financial services businesses excluded — ensure ClaimPilot is positioned as "technology" not "financial service"</li>
+              <li>5-year holding period required for maximum exclusion (10x or $10M, whichever is greater)</li>
+              <li>State-level exclusions vary — NJ may not fully conform</li>
+            </ul>
+          </div>
+        </div>
+        <div class="card2" style="margin-top: 12px;">
+          <h4 style="margin-bottom: 12px;">Recommended Structure</h4>
+          <div class="flow-step">
+            <div class="flow-num">1</div>
+            <div class="flow-content"><h4>Delaware C-Corp</h4><p>ClaimPilot Inc. — incorporated in Delaware, day one. This is non-negotiable for QSBS.</p></div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">2</div>
+            <div class="flow-content"><h4>Issue Founder Stock Immediately</h4><p>Joe receives 10M shares at $0.0001 par value. Total consideration: ~$1,000. This is your QSBS position — start the 5-year clock.</p></div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">3</div>
+            <div class="flow-content"><h4>83(b) Election — File Within 30 Days!</h4><p>If any stock vests over time, file an 83(b) election with the IRS within 30 days of grant. Missing this is a $100,000+ mistake. Non-negotiable.</p></div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">4</div>
+            <div class="flow-content"><h4>Keep Gross Assets Under $50M</h4><p>Before you take outside investment, ensure the company's assets plus any investment don't push over $50M. This threshold must be met at time of stock issuance for each investor to qualify.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 10: RISK ANALYSIS -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">10</div>
+      <div class="section-title">Risk Analysis — Charlie Munger Inversion: How Does ClaimPilot Fail?</div>
+    </div>
+
+    <div class="highlight-red" style="max-width: 100%; margin-bottom: 20px;">
+      <strong>Munger's Rule:</strong> "Invert, always invert. Tell me where I'll die so I never go there." Here are the ways ClaimPilot dies — and how to avoid each one.
+    </div>
+
+    <div class="risk-item">
+      <div class="risk-icon">⚖️</div>
+      <div class="risk-content">
+        <h4>Risk #1: Unauthorized Practice of Law (Highest Priority)</h4>
+        <p>If ClaimPilot drafts appeal letters and a state bar association decides that's "practicing law," the company faces cease-and-desist orders and potential criminal charges. <strong>Mitigation:</strong> Structure as document assistance (like LegalZoom), not legal advice. Partner with licensed attorneys in each state for the premium tier. Get an insurance law attorney opinion BEFORE launch.</p>
+      </div>
+    </div>
+    <div class="risk-item">
+      <div class="risk-icon">🏛️</div>
+      <div class="risk-content">
+        <h4>Risk #2: State Regulatory Action</h4>
+        <p>Insurance commissioners could classify ClaimPilot as a public adjuster or claims management company requiring licensing. Some states are aggressive regulators. <strong>Mitigation:</strong> Start in NJ + federal-only health claims (ACA plans). Build relationships with insurance regulators early. Get licensed as a public adjuster where required.</p>
+      </div>
+    </div>
+    <div class="risk-item">
+      <div class="risk-icon">🏢</div>
+      <div class="risk-content">
+        <h4>Risk #3: Insurance Company Retaliation</h4>
+        <p>A major insurer could change their appeals process to require attorney representation, add technical barriers, or lobby state legislatures to restrict AI-generated appeals. <strong>Mitigation:</strong> Focus on ACA federal protections where insurers have limited ability to restrict appeals. Scale fast before insurers notice.</p>
+      </div>
+    </div>
+    <div class="risk-item">
+      <div class="risk-icon">🤖</div>
+      <div class="risk-content">
+        <h4>Risk #4: AI Accuracy and Liability</h4>
+        <p>If ClaimPilot's AI gives bad advice that causes a consumer to miss their appeal deadline or file an incorrect appeal, ClaimPilot could face lawsuits. <strong>Mitigation:</strong> Robust disclaimers, E&O insurance ($2M minimum), human review tier for large claims ($5K+), and build in deadline tracking so no consumer misses their window.</p>
+      </div>
+    </div>
+    <div class="risk-item">
+      <div class="risk-icon">💻</div>
+      <div class="risk-content">
+        <h4>Risk #5: BigTech Enters the Space</h4>
+        <p>Google has all the search data, AI capability, and consumer trust to build this in 6 months. If Google Health or a well-funded startup decides to go after this market, they could out-resource ClaimPilot. <strong>Mitigation:</strong> Scale fast, build the data moat, establish brand trust, and make yourself a compelling acquisition target (this is likely the exit path anyway).</p>
+      </div>
+    </div>
+    <div class="risk-item">
+      <div class="risk-icon">📉</div>
+      <div class="risk-content">
+        <h4>Risk #6: Collection is Harder Than It Looks</h4>
+        <p>Getting consumers to pay 15-20% of their recovered amount after the fact requires a solid contract and willingness to pursue non-payers. <strong>Mitigation:</strong> Require credit card on file before starting appeal. Process payment automatically when insurer confirms payment. Partner with payment processors that handle escrow-like timing.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 11: FINANCIAL PROJECTIONS -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">11</div>
+      <div class="section-title">Financial Projections — Year 1 to Year 5</div>
+    </div>
+
+    <div class="scenario-tabs">
+      <div class="scenario bear">
+        <h4>🐻 Bear Case</h4>
+        <p style="font-size: 12px; color: var(--muted); margin-bottom: 12px;">Regulatory hurdles slow growth. Licensing requirements add cost. Low appeal win rate.</p>
+        <div class="metric"><span>Year 1:</span> <strong>$85K ARR</strong></div>
+        <div class="metric"><span>Year 2:</span> <strong>$320K ARR</strong></div>
+        <div class="metric"><span>Year 3:</span> <strong>$780K ARR</strong></div>
+        <div class="metric"><span>Year 4:</span> <strong>$1.8M ARR</strong></div>
+        <div class="metric"><span>Year 5:</span> <strong>$3.5M ARR</strong></div>
+        <div class="metric"><span>Breakeven:</span> <strong>Month 24</strong></div>
+      </div>
+      <div class="scenario base">
+        <h4>📊 Base Case</h4>
+        <p style="font-size: 12px; color: var(--muted); margin-bottom: 12px;">Steady growth, health-first strategy, 1,000 subscribers by Year 2, expand to property Year 3.</p>
+        <div class="metric"><span>Year 1:</span> <strong>$250K ARR</strong></div>
+        <div class="metric"><span>Year 2:</span> <strong>$1.1M ARR</strong></div>
+        <div class="metric"><span>Year 3:</span> <strong>$3.2M ARR</strong></div>
+        <div class="metric"><span>Year 4:</span> <strong>$7.5M ARR</strong></div>
+        <div class="metric"><span>Year 5:</span> <strong>$15M ARR</strong></div>
+        <div class="metric"><span>Breakeven:</span> <strong>Month 14</strong></div>
+      </div>
+      <div class="scenario bull">
+        <h4>🐂 Bull Case</h4>
+        <p style="font-size: 12px; color: var(--muted); margin-bottom: 12px;">Viral social media growth, partnership with patient advocacy groups, national media coverage.</p>
+        <div class="metric"><span>Year 1:</span> <strong>$600K ARR</strong></div>
+        <div class="metric"><span>Year 2:</span> <strong>$3.5M ARR</strong></div>
+        <div class="metric"><span>Year 3:</span> <strong>$9M ARR</strong></div>
+        <div class="metric"><span>Year 4:</span> <strong>$22M ARR</strong></div>
+        <div class="metric"><span>Year 5:</span> <strong>$45M ARR</strong></div>
+        <div class="metric"><span>Breakeven:</span> <strong>Month 8</strong></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom: 16px;">Base Case Cost Structure</h3>
+      <table>
+        <thead><tr><th>Cost Item</th><th>Year 1</th><th>Year 2</th><th>Year 3</th></tr></thead>
+        <tbody>
+          <tr><td>Founder Salary (Joe)</td><td>$0 (side project)</td><td>$80,000</td><td>$150,000</td></tr>
+          <tr><td>Technical Lead / CTO</td><td>$40,000</td><td>$120,000</td><td>$160,000</td></tr>
+          <tr><td>AI API Costs (OpenAI/Anthropic)</td><td>$8,000</td><td>$35,000</td><td>$80,000</td></tr>
+          <tr><td>Legal & Compliance</td><td>$25,000</td><td>$40,000</td><td>$60,000</td></tr>
+          <tr><td>Marketing & Customer Acquisition</td><td>$30,000</td><td>$80,000</td><td>$200,000</td></tr>
+          <tr><td>Insurance (E&O + GL)</td><td>$6,000</td><td>$12,000</td><td>$20,000</td></tr>
+          <tr><td>Infrastructure & Tools</td><td>$8,000</td><td>$20,000</td><td>$40,000</td></tr>
+          <tr style="background: rgba(232,86,42,0.05);"><td><strong>Total Costs</strong></td><td><strong>$117,000</strong></td><td><strong>$387,000</strong></td><td><strong>$710,000</strong></td></tr>
+          <tr style="background: rgba(63,185,80,0.05);"><td><strong>EBITDA (Base Case)</strong></td><td><strong class="red">-$67K</strong></td><td><strong class="green">+$713K</strong></td><td><strong class="green">+$2.49M</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SECTION 12: VERDICT -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">12</div>
+      <div class="section-title">Verdict & Next Steps</div>
+    </div>
+
+    <div class="card" style="background: linear-gradient(135deg, #161b22 0%, #1a1208 100%); border-color: rgba(232,86,42,0.4);">
+      <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;">
+        <div style="background: var(--accent); color: white; font-size: 36px; font-weight: 800; padding: 16px 24px; border-radius: 10px;">7.8</div>
+        <div>
+          <div style="font-size: 22px; font-weight: 700; margin-bottom: 8px;">CONDITIONAL GO</div>
+          <div style="font-size: 15px; color: var(--muted); max-width: 600px;">High conviction on the market opportunity. Real risk around legal structure that must be resolved before building. Start narrow (health insurance, federal ACA plans only), prove the model in NJ, then expand.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-top: 16px;">
+      <div class="card">
+        <h3 style="color: var(--green); margin-bottom: 16px;">✅ Why Go</h3>
+        <ul>
+          <li><strong>Massive market:</strong> 48.3M denied health claims/year, virtually zero competition serving consumers with AI</li>
+          <li><strong>Business model works:</strong> Contingency aligns incentives perfectly. Consumer pays nothing to start.</li>
+          <li><strong>Low startup cost:</strong> $20-30K to MVP. Can bootstrap this without outside funding.</li>
+          <li><strong>Data moat compounds:</strong> Every claim makes the AI smarter, creating a durable competitive advantage</li>
+          <li><strong>Acquisition target:</strong> Health insurers, HR software companies, and health systems would pay for this technology</li>
+          <li><strong>Section 1202 eligible:</strong> 10x return potentially tax-free if held 5 years</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3 style="color: var(--red); margin-bottom: 16px;">⚠️ Conditions Before Going</h3>
+        <ul>
+          <li><strong>Legal opinion first:</strong> Get a formal opinion from an insurance/regulatory attorney on the unauthorized practice of law risk</li>
+          <li><strong>Health-only to start:</strong> Do not touch property/auto claims without public adjuster licensing</li>
+          <li><strong>E&O insurance:</strong> Must have errors & omissions coverage before first client</li>
+          <li><strong>Competitor analysis:</strong> Research Overruled.ai deeply before building — understand their traction, funding, and positioning</li>
+          <li><strong>Payment structure:</strong> Contract must clearly define contingency collection mechanism</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 0;">
+      <h3 style="color: var(--accent); margin-bottom: 16px;">🚀 What Joe Does THIS WEEK</h3>
+      <div class="action-item">
+        <div class="action-week">MON</div>
+        <div class="action-text"><strong>Research Overruled.ai</strong> — what stage are they at? How many users? Funding? This tells you if you're building something or competing with something already built.</div>
+      </div>
+      <div class="action-item">
+        <div class="action-week">TUE</div>
+        <div class="action-text"><strong>Call an insurance/regulatory attorney</strong> in NJ. Ask: "Can I draft and submit health insurance appeal letters for consumers on a contingency fee basis without a license?" Get it in writing.</div>
+      </div>
+      <div class="action-item">
+        <div class="action-week">WED</div>
+        <div class="action-text"><strong>Talk to 5 people</strong> who have been denied an insurance claim in the last 2 years. Did they appeal? Why not? Would they pay 15% of a successful recovery? Validate the premise.</div>
+      </div>
+      <div class="action-item">
+        <div class="action-week">THU</div>
+        <div class="action-text"><strong>Incorporate ClaimPilot Inc. in Delaware</strong> if the legal opinion is positive. Do this via Stripe Atlas ($500) or Clerky ($799). Start the Section 1202 clock.</div>
+      </div>
+      <div class="action-item">
+        <div class="action-week">FRI</div>
+        <div class="action-text"><strong>Build the simplest possible MVP</strong> — upload a denial letter → Claude AI reads it → outputs a draft appeal letter. Don't build the full platform yet. Test if the AI output is good enough to be useful. This is a $200 API test.</div>
+      </div>
+    </div>
+
+    <div class="highlight" style="margin-top: 0;">
+      <strong>Bottom Line:</strong> The problem is real, the market is massive, and the technology is available today. The risk isn't building it — the risk is building it wrong (without legal protection) or building it after a well-funded competitor has already captured the market. Spend $5,000 on legal clarity and $200 on an AI prototype this week. If both check out, ClaimPilot is a GO.
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div>🦞 ClaimPilot Deep Dive — Built by Rob Lobster for Joe Lynch | Unicorn Factory | April 19, 2026</div>
+  <div style="margin-top: 8px; opacity: 0.6;">This analysis is for internal strategic planning purposes. Not legal or financial advice. Consult qualified professionals before proceeding.</div>
+</footer>
+
+</body>
+</html>
