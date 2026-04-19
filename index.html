@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🦄 The Unicorn Factory</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0D1117;
+      --card: #161B22;
+      --border: #30363D;
+      --text: #E6EDF3;
+      --muted: #8B949E;
+      --accent: #E8562A;
+      --accent-dim: rgba(232,86,42,0.15);
+      --green: #3FB950;
+      --red: #F85149;
+      --blue: #58A6FF;
+      --yellow: #D29922;
+      --purple: #BC8CFF;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── LOGIN ── */
+    #login-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .login-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+    }
+    .login-box .logo { font-size: 56px; margin-bottom: 12px; }
+    .login-box h1 { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+    .login-box p { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+    .login-box input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 15px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .login-box input:focus { border-color: var(--accent); }
+    .login-box button {
+      width: 100%;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 13px;
+      cursor: pointer;
+      transition: opacity .2s;
+    }
+    .login-box button:hover { opacity: .85; }
+    .login-error { color: var(--red); font-size: 13px; margin-top: 10px; min-height: 18px; }
+
+    /* ── MAIN APP ── */
+    #app { display: none; }
+
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .header-brand h1 { font-size: 22px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+    .header-brand p { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .header-stats {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .stat-chip {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .stat-chip span { color: var(--accent); font-weight: 700; }
+    .logout-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      padding: 5px 12px;
+      cursor: pointer;
+      transition: border-color .2s, color .2s;
+    }
+    .logout-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .admin-badge {
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      border-radius: 12px;
+      padding: 3px 10px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    /* ── TABS ── */
+    .tabs-bar {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+    }
+    .tabs-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .tabs-inner::-webkit-scrollbar { display: none; }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 14px 18px;
+      white-space: nowrap;
+      transition: color .2s, border-color .2s;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { border-bottom-color: var(--accent); color: var(--text); font-weight: 700; }
+
+    /* ── TOOLBAR ── */
+    .toolbar {
+      max-width: 1280px;
+      margin: 24px auto 0;
+      padding: 0 24px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .search-wrap { position: relative; flex: 1; min-width: 200px; }
+    .search-wrap input {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+      padding: 10px 14px 10px 38px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .search-wrap input:focus { border-color: var(--accent); }
+    .search-wrap svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); opacity: .4; }
+    .filter-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .filter-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 14px;
+      transition: all .2s;
+    }
+    .filter-btn:hover { border-color: var(--accent); color: var(--text); }
+    .filter-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); font-weight: 700; }
+
+    /* ── CONTENT ── */
+    .content {
+      max-width: 1280px;
+      margin: 24px auto 60px;
+      padding: 0 24px;
+    }
+
+    /* ── CARDS GRID ── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 20px;
+    }
+
+    .idea-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: border-color .2s, transform .15s;
+    }
+    .idea-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+    .card-header {
+      padding: 20px 20px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .card-title { font-size: 18px; font-weight: 800; line-height: 1.3; }
+    .badge-1202-yes {
+      background: rgba(63,185,80,.15);
+      border: 1px solid var(--green);
+      color: var(--green);
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .badge-1202-no {
+      background: rgba(248,81,73,.15);
+      border: 1px solid var(--red);
+      color: var(--red);
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .card-body { padding: 16px 20px; }
+
+    .card-desc {
+      color: var(--muted);
+      font-size: 13.5px;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    .card-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .meta-item { }
+    .meta-label {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      margin-bottom: 3px;
+    }
+    .meta-value { font-size: 13px; font-weight: 600; }
+    .meta-value.green { color: var(--green); }
+    .meta-value.yellow { color: var(--yellow); }
+    .meta-value.blue { color: var(--blue); }
+    .meta-value.purple { color: var(--purple); }
+    .meta-value.accent { color: var(--accent); }
+
+    /* Scale bar */
+    .scale-bar-wrap { display: flex; align-items: center; gap: 8px; }
+    .scale-bar-track {
+      flex: 1;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .scale-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, var(--yellow), var(--green));
+      transition: width .4s ease;
+    }
+    .scale-num { font-size: 13px; font-weight: 700; white-space: nowrap; }
+
+    /* Moat badge */
+    .moat-badge {
+      background: rgba(88,166,255,.12);
+      border: 1px solid rgba(88,166,255,.3);
+      color: var(--blue);
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      display: inline-block;
+      margin-bottom: 12px;
+    }
+
+    .card-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 12px 0;
+    }
+
+    .detail-row {
+      margin-bottom: 10px;
+    }
+    .detail-label {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      margin-bottom: 3px;
+    }
+    .detail-value { font-size: 13px; line-height: 1.5; }
+
+    .gallagher-box {
+      background: rgba(232,86,42,.08);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 6px 6px 0;
+      padding: 8px 12px;
+      margin-bottom: 12px;
+      font-size: 12.5px;
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .gallagher-box strong { color: var(--accent); }
+
+    .card-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .deepdive-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .deepdive-check input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all .2s;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .deepdive-check input[type="checkbox"]:checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .deepdive-check input[type="checkbox"]:checked::after {
+      content: '✓';
+      position: absolute;
+      top: -1px;
+      left: 2px;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .deepdive-check span { font-size: 13px; font-weight: 600; }
+
+    /* Admin controls */
+    .admin-controls { display: none; }
+    .admin-controls.visible { display: flex; gap: 6px; }
+    .move-btn {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 11px;
+      padding: 4px 8px;
+      transition: all .2s;
+    }
+    .move-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+    .empty-state .empty-icon { font-size: 56px; margin-bottom: 16px; }
+    .empty-state h2 { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .empty-state p { font-size: 14px; max-width: 340px; margin: 0 auto; line-height: 1.6; }
+
+    /* ── NO RESULTS ── */
+    .no-results {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+    .no-results .icon { font-size: 40px; margin-bottom: 12px; }
+    .no-results p { font-size: 15px; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .header-inner { flex-direction: column; align-items: flex-start; }
+      .cards-grid { grid-template-columns: 1fr; }
+      .card-meta { grid-template-columns: 1fr; }
+      .login-box { padding: 32px 24px; }
+      .toolbar { gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════ LOGIN ══════════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="logo">🦄</div>
+    <h1>The Unicorn Factory</h1>
+    <p>AI-Powered Deal Flow Pipeline</p>
+    <input type="password" id="pw-input" placeholder="Enter password" autocomplete="current-password" />
+    <button onclick="handleLogin()">Access Dashboard</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- ══════════════ APP ══════════════ -->
+<div id="app">
+
+  <header>
+    <div class="header-inner">
+      <div class="header-brand">
+        <h1>🦄 The Unicorn Factory</h1>
+        <p>AI-Powered Deal Flow Pipeline — Section 1202 Eligible</p>
+      </div>
+      <div class="header-stats">
+        <div class="stat-chip"><span id="idea-count">0</span> ideas</div>
+        <div class="stat-chip"><span id="dive-count">0</span> deep-dives requested</div>
+        <div id="admin-badge" class="admin-badge" style="display:none;">⚡ Admin</div>
+        <button class="logout-btn" onclick="logout()">Sign Out</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="tabs-bar">
+    <div class="tabs-inner">
+      <button class="tab-btn active" data-tab="pipeline" onclick="switchTab('pipeline')">📋 Pipeline</button>
+      <button class="tab-btn" data-tab="deepdives" onclick="switchTab('deepdives')">🔍 Deep Dives</button>
+      <button class="tab-btn" data-tab="vetted" onclick="switchTab('vetted')">✅ Vetted</button>
+      <button class="tab-btn" data-tab="killed" onclick="switchTab('killed')">❌ Killed</button>
+    </div>
+  </div>
+
+  <!-- PIPELINE TAB -->
+  <div id="tab-pipeline" class="tab-content">
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="search-input" placeholder="Search ideas…" oninput="applyFilters()" />
+      </div>
+      <div class="filter-group">
+        <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">All</button>
+        <button class="filter-btn" data-filter="highscale" onclick="setFilter('highscale')">🚀 High Scale (8+)</button>
+        <button class="filter-btn" data-filter="1202" onclick="setFilter('1202')">✅ 1202 Eligible</button>
+        <button class="filter-btn" data-filter="lowcost" onclick="setFilter('lowcost')">💰 Low Startup Cost</button>
+      </div>
+    </div>
+    <div class="content">
+      <div class="cards-grid" id="pipeline-grid"></div>
+    </div>
+  </div>
+
+  <!-- DEEP DIVES TAB -->
+  <div id="tab-deepdives" class="tab-content" style="display:none;">
+    <div class="content">
+      <div class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <h2>Deep Dives Coming Soon</h2>
+        <p>Check the <strong>🔍 Request Deep Dive</strong> box on any Pipeline idea to queue it up. Full analysis reports will appear here once completed.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- VETTED TAB -->
+  <div id="tab-vetted" class="tab-content" style="display:none;">
+    <div class="content">
+      <div class="empty-state">
+        <div class="empty-icon">✅</div>
+        <h2>No Vetted Ideas Yet</h2>
+        <p>Ideas that pass full team review will be promoted here. Admin users can move ideas between sections.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- KILLED TAB -->
+  <div id="tab-killed" class="tab-content" style="display:none;">
+    <div class="content">
+      <div class="empty-state">
+        <div class="empty-icon">❌</div>
+        <h2>No Killed Ideas</h2>
+        <p>Ideas that don't make the cut get archived here — so the thinking is never truly lost.</p>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end #app -->
+
+<script>
+// ══════════════════════════════════════
+//  DATA
+// ══════════════════════════════════════
+const IDEAS = [
+  {
+    id: "claimpilot",
+    name: "ClaimPilot",
+    subtitle: "AI Insurance Claims Advocate",
+    description: "AI platform that fights insurance claim denials. Reads denial letters, analyzes policy, finds loopholes, drafts appeals, and submits them. 50–60% of appealed claims get overturned but most people never appeal because it's too complicated.",
+    revenue: "15–20% contingency on recovered claims + $29/mo subscription. Avg recovered claim $3–5K.",
+    startupCost: "$15–25K",
+    startupCostRaw: 20000,
+    scale: 9,
+    eligible1202: true,
+    tam: "$8.5B",
+    moat: "Data moat + regulatory complexity barrier",
+    source: "Regulatory arbitrage",
+    gallagher: "Same model — complicated process simplified by AI, charge for outcome",
+    arrPath: "1,000 subs + 200 cases/mo = $1.5M Year 1",
+    futureProof: "Insurance complexity not going away. AI gets smarter with every claim processed.",
+    section: "pipeline"
+  },
+  {
+    id: "ledgersync",
+    name: "LedgerSync",
+    subtitle: "AI Bookkeeping Reconciliation",
+    description: "AI auto-reconciles bank transactions with QuickBooks, Xero, and FreshBooks in real-time. Monthly close that takes days becomes automatic. Texts the business owner when it can't match something. Every accountant in America would sell this to their clients.",
+    revenue: "$49/mo basic, $149/mo premium. Accountant referral program: 20% revenue share.",
+    startupCost: "$20–35K",
+    startupCostRaw: 27500,
+    scale: 10,
+    eligible1202: true,
+    tam: "$12B (33M small businesses)",
+    moat: "Accountant distribution network, data moat, switching costs",
+    source: "Team expertise — Robert MacArthur + Joe's GL balancing idea",
+    gallagher: "Accountants are the distribution channel, like doctors for Medv",
+    arrPath: "2,000 businesses at $49/mo = $1.2M ARR",
+    futureProof: "Tax code gets more complex, not less. AI advantage compounds over time.",
+    section: "pipeline"
+  },
+  {
+    id: "preopai",
+    name: "PreOpAI",
+    subtitle: "AI Surgical Consultation Platform",
+    description: "AI gives plastic surgery patients realistic before/after predictions. Upload photos, AI generates visual outcomes. Connects patients with vetted surgeons. Matt Lynch as founding medical advisor — instant credibility.",
+    revenue: "Surgeons pay $500–2K/mo for listing + leads. Patients free. CareCredit financing referrals.",
+    startupCost: "$30–45K",
+    startupCostRaw: 37500,
+    scale: 8,
+    eligible1202: true,
+    tam: "$22B cosmetic surgery + $5B medical tourism",
+    moat: "Medical credibility (Matt Lynch), AI prediction accuracy improves with data, surgeon network effects",
+    source: "Team expertise — Matt Lynch (plastic surgeon)",
+    gallagher: "Platform connecting patients to providers via AI intake — identical structure to the Medv model",
+    arrPath: "200 surgeons at $1K/mo = $2.4M ARR",
+    futureProof: "Elective procedures growing. AI visualization improving. Expands to dental, derma, ortho.",
+    section: "pipeline"
+  }
+];
+
+// ══════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════
+const PASS_ADMIN  = "lobsteradmin2026";
+const PASS_VIEWER = "lobsterview2026";
+let isAdmin = false;
+let currentFilter = "all";
+
+function handleLogin() {
+  const pw = document.getElementById("pw-input").value.trim();
+  if (pw === PASS_ADMIN) {
+    isAdmin = true;
+    bootApp();
+  } else if (pw === PASS_VIEWER) {
+    isAdmin = false;
+    bootApp();
+  } else {
+    document.getElementById("login-error").textContent = "Incorrect password. Try again.";
+    document.getElementById("pw-input").value = "";
+    document.getElementById("pw-input").focus();
+  }
+}
+
+document.getElementById("pw-input").addEventListener("keydown", e => {
+  if (e.key === "Enter") handleLogin();
+});
+
+function bootApp() {
+  document.getElementById("login-screen").style.display = "none";
+  document.getElementById("app").style.display = "block";
+  if (isAdmin) document.getElementById("admin-badge").style.display = "inline-block";
+  updateStats();
+  renderPipeline();
+}
+
+function logout() {
+  document.getElementById("login-screen").style.display = "flex";
+  document.getElementById("app").style.display = "none";
+  document.getElementById("pw-input").value = "";
+  document.getElementById("login-error").textContent = "";
+}
+
+// ══════════════════════════════════════
+//  STATS
+// ══════════════════════════════════════
+function updateStats() {
+  const pipelineIdeas = IDEAS.filter(i => i.section === "pipeline");
+  document.getElementById("idea-count").textContent = pipelineIdeas.length;
+  const dives = getDiveRequests();
+  document.getElementById("dive-count").textContent = dives.length;
+}
+
+function getDiveRequests() {
+  try { return JSON.parse(localStorage.getItem("uf_dives") || "[]"); }
+  catch { return []; }
+}
+
+function saveDiveRequests(arr) {
+  localStorage.setItem("uf_dives", JSON.stringify(arr));
+}
+
+function toggleDive(id, checked) {
+  let dives = getDiveRequests();
+  if (checked) { if (!dives.includes(id)) dives.push(id); }
+  else { dives = dives.filter(d => d !== id); }
+  saveDiveRequests(dives);
+  updateStats();
+}
+
+// ══════════════════════════════════════
+//  TABS
+// ══════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll(".tab-content").forEach(el => el.style.display = "none");
+  document.getElementById("tab-" + name).style.display = "block";
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
+}
+
+// ══════════════════════════════════════
+//  FILTERS
+// ══════════════════════════════════════
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll(".filter-btn").forEach(b =>
+    b.classList.toggle("active", b.dataset.filter === f)
+  );
+  applyFilters();
+}
+
+function applyFilters() {
+  const q = (document.getElementById("search-input").value || "").toLowerCase();
+  let ideas = IDEAS.filter(i => i.section === "pipeline");
+
+  if (currentFilter === "highscale") ideas = ideas.filter(i => i.scale >= 8);
+  if (currentFilter === "1202")      ideas = ideas.filter(i => i.eligible1202);
+  if (currentFilter === "lowcost")   ideas = ideas.filter(i => i.startupCostRaw <= 25000);
+
+  if (q) {
+    ideas = ideas.filter(i =>
+      i.name.toLowerCase().includes(q) ||
+      i.subtitle.toLowerCase().includes(q) ||
+      i.description.toLowerCase().includes(q) ||
+      i.moat.toLowerCase().includes(q) ||
+      i.source.toLowerCase().includes(q)
+    );
+  }
+
+  renderCards(ideas);
+}
+
+// ══════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════
+function renderPipeline() { applyFilters(); }
+
+function renderCards(ideas) {
+  const grid = document.getElementById("pipeline-grid");
+  const dives = getDiveRequests();
+
+  if (ideas.length === 0) {
+    grid.innerHTML = `<div class="no-results"><div class="icon">🔎</div><p>No ideas match your filters.</p></div>`;
+    return;
+  }
+
+  grid.innerHTML = ideas.map(idea => cardHTML(idea, dives)).join("");
+
+  // Bind checkboxes
+  ideas.forEach(idea => {
+    const cb = document.getElementById("dive-cb-" + idea.id);
+    if (cb) {
+      cb.addEventListener("change", () => toggleDive(idea.id, cb.checked));
+    }
+  });
+}
+
+function scaleColor(n) {
+  if (n >= 9) return "#3FB950";
+  if (n >= 7) return "#D29922";
+  return "#E8562A";
+}
+
+function cardHTML(idea, dives) {
+  const checked = dives.includes(idea.id) ? "checked" : "";
+  const badgeClass = idea.eligible1202 ? "badge-1202-yes" : "badge-1202-no";
+  const badgeText  = idea.eligible1202 ? "✅ §1202 Eligible" : "❌ §1202 N/A";
+  const fillPct    = (idea.scale / 10) * 100;
+  const color      = scaleColor(idea.scale);
+  const adminBtns  = isAdmin ? `
+    <div class="admin-controls visible">
+      <button class="move-btn" onclick="moveIdea('${idea.id}','vetted')">→ Vetted</button>
+      <button class="move-btn" onclick="moveIdea('${idea.id}','killed')">→ Killed</button>
+    </div>` : "";
+
+  return `
+  <div class="idea-card" id="card-${idea.id}">
+    <div class="card-header">
+      <div>
+        <div class="card-title">${idea.name}</div>
+        <div style="color:var(--muted);font-size:13px;margin-top:3px;">${idea.subtitle}</div>
+      </div>
+      <div class="${badgeClass}">${badgeText}</div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">${idea.description}</p>
+
+      <div class="card-meta">
+        <div class="meta-item">
+          <div class="meta-label">Startup Cost</div>
+          <div class="meta-value yellow">${idea.startupCost}</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">TAM</div>
+          <div class="meta-value green">${idea.tam}</div>
+        </div>
+        <div class="meta-item" style="grid-column: 1 / -1;">
+          <div class="meta-label">Scaling Score</div>
+          <div class="scale-bar-wrap" style="margin-top:4px;">
+            <div class="scale-bar-track">
+              <div class="scale-bar-fill" style="width:${fillPct}%;background:${color};"></div>
+            </div>
+            <span class="scale-num" style="color:${color};">${idea.scale}/10</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="moat-badge">🛡️ ${idea.moat}</div>
+
+      <hr class="card-divider" />
+
+      <div class="detail-row">
+        <div class="detail-label">Revenue Model</div>
+        <div class="detail-value">${idea.revenue}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Path to $1M ARR</div>
+        <div class="detail-value" style="color:var(--green);font-weight:600;">🎯 ${idea.arrPath}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Future-Proof Assessment</div>
+        <div class="detail-value">${idea.futureProof}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Source</div>
+        <div class="detail-value" style="color:var(--muted);">${idea.source}</div>
+      </div>
+
+      <hr class="card-divider" />
+
+      <div class="gallagher-box">
+        <strong>🔗 Gallagher Parallel:</strong> ${idea.gallagher}
+      </div>
+
+    </div>
+    <div class="card-footer">
+      <label class="deepdive-check">
+        <input type="checkbox" id="dive-cb-${idea.id}" ${checked} />
+        <span>🔍 Request Deep Dive</span>
+      </label>
+      ${adminBtns}
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════════════
+//  ADMIN: MOVE IDEAS
+// ══════════════════════════════════════
+function moveIdea(id, section) {
+  const idea = IDEAS.find(i => i.id === id);
+  if (!idea) return;
+  idea.section = section;
+  updateStats();
+  applyFilters();
+  alert(`"${idea.name}" moved to ${section === "vetted" ? "✅ Vetted" : "❌ Killed"}.`);
+}
+</script>
+</body>
+</html>
