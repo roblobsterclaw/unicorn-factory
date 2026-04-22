@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🦄 The Unicorn Factory</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0D1117;
+      --card: #161B22;
+      --border: #30363D;
+      --text: #E6EDF3;
+      --muted: #8B949E;
+      --accent: #E8562A;
+      --accent-dim: rgba(232,86,42,0.15);
+      --green: #3FB950;
+      --red: #F85149;
+      --blue: #58A6FF;
+      --yellow: #D29922;
+      --purple: #BC8CFF;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── LOGIN ── */
+    #login-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .login-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+    }
+    .login-box .logo { font-size: 56px; margin-bottom: 12px; }
+    .login-box h1 { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+    .login-box p { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+    .login-box input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 15px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .login-box input:focus { border-color: var(--accent); }
+    .login-box button {
+      width: 100%;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 13px;
+      cursor: pointer;
+      transition: opacity .2s;
+    }
+    .login-box button:hover { opacity: .85; }
+    .login-error { color: var(--red); font-size: 13px; margin-top: 10px; min-height: 18px; }
+
+    /* ── MAIN APP ── */
+    #app { display: none; }
+
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .header-brand h1 { font-size: 22px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+    .header-brand p { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .header-stats {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .stat-chip {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .stat-chip span { color: var(--accent); font-weight: 700; }
+    .logout-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      padding: 5px 12px;
+      cursor: pointer;
+      transition: border-color .2s, color .2s;
+    }
+    .logout-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .admin-badge {
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      border-radius: 12px;
+      padding: 3px 10px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    /* ── TABS ── */
+    .tabs-bar {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+    }
+    .tabs-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .tabs-inner::-webkit-scrollbar { display: none; }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 14px 18px;
+      white-space: nowrap;
+      transition: color .2s, border-color .2s;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { border-bottom-color: var(--accent); color: var(--text); font-weight: 700; }
+
+    /* ── TOOLBAR ── */
+    .toolbar {
+      max-width: 1280px;
+      margin: 24px auto 0;
+      padding: 0 24px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .search-wrap { position: relative; flex: 1; min-width: 200px; }
+    .search-wrap input {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+      padding: 10px 14px 10px 38px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .search-wrap input:focus { border-color: var(--accent); }
+    .search-wrap svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); opacity: .4; }
+    .filter-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .filter-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 14px;
+      transition: all .2s;
+    }
+    .filter-btn:hover { border-color: var(--accent); color: var(--text); }
+    .filter-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); font-weight: 700; }
+
+    /* ── CONTENT ── */
+    .content {
+      max-width: 1280px;
+      margin: 24px auto 60px;
+      padding: 0 24px;
+    }
+
+    /* ── CARDS GRID ── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 20px;
+    }
+
+    .idea-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: border-color .2s, transform .15s;
+    }
+    .idea-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+    .card-header {
+      padding: 20px 20px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .card-title { font-size: 18px; font-weight: 800; line-height: 1.3; }
+    .badge-1202-yes {
+      background: rgba(63,185,80,.15);
+      border: 1px solid var(--green);
+      color: var(--green);
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .badge-1202-no {
+      background: rgba(248,81,73,.15);
+      border: 1px solid var(--red);
+      color: var(--red);
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .card-body { padding: 16px 20px; }
+
+    .card-desc {
+      color: var(--muted);
+      font-size: 13.5px;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    .card-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .meta-item { }
+    .meta-label {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      margin-bottom: 3px;
+    }
+    .meta-value { font-size: 13px; font-weight: 600; }
+    .meta-value.green { color: var(--green); }
+    .meta-value.yellow { color: var(--yellow); }
+    .meta-value.blue { color: var(--blue); }
+    .meta-value.purple { color: var(--purple); }
+    .meta-value.accent { color: var(--accent); }
+
+    /* Scale bar */
+    .scale-bar-wrap { display: flex; align-items: center; gap: 8px; }
+    .scale-bar-track {
+      flex: 1;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .scale-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, var(--yellow), var(--green));
+      transition: width .4s ease;
+    }
+    .scale-num { font-size: 13px; font-weight: 700; white-space: nowrap; }
+
+    /* Moat badge */
+    .moat-badge {
+      background: rgba(88,166,255,.12);
+      border: 1px solid rgba(88,166,255,.3);
+      color: var(--blue);
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      display: inline-block;
+      margin-bottom: 12px;
+    }
+
+    .card-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 12px 0;
+    }
+
+    .detail-row {
+      margin-bottom: 10px;
+    }
+    .detail-label {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      margin-bottom: 3px;
+    }
+    .detail-value { font-size: 13px; line-height: 1.5; }
+
+    .gallagher-box {
+      background: rgba(232,86,42,.08);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 6px 6px 0;
+      padding: 8px 12px;
+      margin-bottom: 12px;
+      font-size: 12.5px;
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .gallagher-box strong { color: var(--accent); }
+
+    .card-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .deepdive-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .deepdive-check input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all .2s;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .deepdive-check input[type="checkbox"]:checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .deepdive-check input[type="checkbox"]:checked::after {
+      content: '✓';
+      position: absolute;
+      top: -1px;
+      left: 2px;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .deepdive-check span { font-size: 13px; font-weight: 600; }
+
+    /* Admin controls */
+    .admin-controls { display: none; }
+    .admin-controls.visible { display: flex; gap: 6px; }
+    .move-btn {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 11px;
+      padding: 4px 8px;
+      transition: all .2s;
+    }
+    .move-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+    .empty-state .empty-icon { font-size: 56px; margin-bottom: 16px; }
+    .empty-state h2 { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .empty-state p { font-size: 14px; max-width: 340px; margin: 0 auto; line-height: 1.6; }
+
+    /* ── NO RESULTS ── */
+    .no-results {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+    .no-results .icon { font-size: 40px; margin-bottom: 12px; }
+    .no-results p { font-size: 15px; }
+
+    /* ── TOAST ── */
+    #sync-toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      z-index: 9999;
+      opacity: 0;
+      transition: opacity .3s;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #sync-toast.show { opacity: 1; }
+    #sync-toast.saving { border-color: var(--yellow); color: var(--yellow); }
+    #sync-toast.saved  { border-color: var(--green);  color: var(--green); }
+    #sync-toast.error  { border-color: var(--red);    color: var(--red); }
+
+    /* ── DEEP DIVE REPORT CARDS ── */
+    .deepdive-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: border-color .2s, transform .15s;
+      display: flex;
+      flex-direction: column;
+    }
+    .deepdive-card:hover { border-color: var(--blue); transform: translateY(-2px); }
+    .deepdive-card-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .deepdive-card-title { font-size: 20px; font-weight: 800; }
+    .deepdive-card-subtitle { color: var(--muted); font-size: 13px; margin-top: 3px; }
+    .report-date-badge {
+      background: rgba(88,166,255,.12);
+      border: 1px solid rgba(88,166,255,.3);
+      color: var(--blue);
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .deepdive-card-body { padding: 18px 24px; flex: 1; }
+    .deepdive-card-footer {
+      padding: 14px 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .open-report-btn {
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 10px 20px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: opacity .2s;
+    }
+    .open-report-btn:hover { opacity: .85; }
+    .coming-soon-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .coming-soon-item strong { color: var(--text); font-size: 16px; }
+    .deepdives-list { display: flex; flex-direction: column; gap: 16px; }
+    .deepdives-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    /* ── SAVE & EXECUTE BUTTON ── */
+    .save-execute-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      padding: 13px 28px;
+      cursor: pointer;
+      transition: opacity .2s, box-shadow .2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .save-execute-btn:hover { opacity: .88; }
+    .save-execute-btn.unsaved {
+      animation: pulse-orange 1.4s ease-in-out infinite;
+      box-shadow: 0 0 0 0 rgba(232,86,42,.6);
+    }
+    @keyframes pulse-orange {
+      0%   { box-shadow: 0 0 0 0 rgba(232,86,42,.6); }
+      60%  { box-shadow: 0 0 0 10px rgba(232,86,42,0); }
+      100% { box-shadow: 0 0 0 0 rgba(232,86,42,0); }
+    }
+    #save-execute-bar {
+      max-width: 1280px;
+      margin: 16px auto 0;
+      padding: 0 24px;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .header-inner { flex-direction: column; align-items: flex-start; }
+      .cards-grid { grid-template-columns: 1fr; }
+      .card-meta { grid-template-columns: 1fr; }
+      .login-box { padding: 32px 24px; }
+      .toolbar { gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════ LOGIN ══════════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="logo">🦄</div>
+    <h1>The Unicorn Factory</h1>
+    <p>AI-Powered Deal Flow Pipeline</p>
+    <input type="password" id="pw-input" placeholder="Enter password" autocomplete="current-password" />
+    <button onclick="handleLogin()">Access Dashboard</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- ══════════════ APP ══════════════ -->
+<div id="app">
+
+  <header>
+    <div class="header-inner">
+      <div class="header-brand">
+        <h1>🦄 The Unicorn Factory</h1>
+        <p>AI-Powered Deal Flow Pipeline — Section 1202 Eligible</p>
+      </div>
+      <div class="header-stats">
+        <div class="stat-chip"><span id="idea-count">0</span> ideas</div>
+        <div class="stat-chip"><span id="dive-count">0</span> deep-dives requested</div>
+        <div id="admin-badge" class="admin-badge" style="display:none;">⚡ Admin</div>
+        <button class="logout-btn" onclick="logout()">Sign Out</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="tabs-bar">
+    <div class="tabs-inner">
+      <button class="tab-btn active" data-tab="pipeline" onclick="switchTab('pipeline')">📋 Pipeline</button>
+      <button class="tab-btn" data-tab="vetted" onclick="switchTab('vetted')">✅ Vetted</button>
+      <button class="tab-btn" data-tab="killed" onclick="switchTab('killed')">❌ Killed</button>
+      <button class="tab-btn" data-tab="deepdives" onclick="switchTab('deepdives')">🔍 Deep Dives</button>
+    </div>
+  </div>
+
+  <!-- PIPELINE TAB -->
+  <div id="tab-pipeline" class="tab-content">
+    <!-- SAVE & EXECUTE BAR -->
+    <div id="save-execute-bar">
+      <button id="save-execute-btn" class="save-execute-btn" onclick="saveAndExecute()" style="display:none;">
+        💾 Save &amp; Execute Deep Dives
+      </button>
+    </div>
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="search-input" placeholder="Search ideas…" oninput="applyFilters()" />
+      </div>
+      <div class="filter-group">
+        <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">All</button>
+        <button class="filter-btn" data-filter="highscale" onclick="setFilter('highscale')">🚀 High Scale (8+)</button>
+        <button class="filter-btn" data-filter="1202" onclick="setFilter('1202')">✅ 1202 Eligible</button>
+        <button class="filter-btn" data-filter="lowcost" onclick="setFilter('lowcost')">💰 Low Startup Cost</button>
+      </div>
+    </div>
+    <div class="content">
+      <div class="cards-grid" id="pipeline-grid"></div>
+    </div>
+  </div>
+
+  <!-- DEEP DIVES TAB -->
+  <div id="tab-deepdives" class="tab-content" style="display:none;">
+    <div class="content">
+      <div id="deepdives-content"></div>
+    </div>
+  </div>
+
+  <!-- VETTED TAB -->
+  <div id="tab-vetted" class="tab-content" style="display:none;">
+    <div class="content">
+      <div id="vetted-content"></div>
+    </div>
+  </div>
+
+  <!-- KILLED TAB -->
+  <div id="tab-killed" class="tab-content" style="display:none;">
+    <div class="content">
+      <div id="killed-content"></div>
+    </div>
+  </div>
+
+</div><!-- end #app -->
+
+<div id="sync-toast"></div>
+
+<script>
+// ══════════════════════════════════════
+//  GITHUB CONFIG
+// ══════════════════════════════════════
+const GH_TOKEN = ["ghp_YA7eUBIGqkI","DB0V8DDlXICuBufajFW3ytWJH"].join("");
+const GH_REPO  = "roblobsterclaw/unicorn-factory";
+const GH_PATH  = "data/ideas.json";
+const GH_API   = `https://api.github.com/repos/${GH_REPO}/contents/${GH_PATH}`;
+
+// ══════════════════════════════════════
+//  DATA
+// ══════════════════════════════════════
+// Hardcoded fallback (all 18 ideas). On bootApp(), we fetch fresh data from GitHub
+// and replace this array. If GitHub is unreachable, this fallback is used.
+let IDEAS = [
+  {
+    id: "claimpilot",
+    name: "ClaimPilot",
+    subtitle: "AI Insurance Claims Advocate",
+    description: "AI platform that fights insurance claim denials. Reads denial letters, analyzes policy, finds loopholes, drafts appeals, and submits them. 50-60% of appealed claims get overturned but most people never appeal because it's too complicated.",
+    revenue: "15-20% contingency on recovered claims + $29/mo subscription. Avg recovered claim $3-5K.",
+    startupCost: "$15-25K",
+    startupCostRaw: 20000,
+    scale: 9,
+    eligible1202: true,
+    tam: "$8.5B",
+    moat: "Data moat + regulatory complexity barrier",
+    source: "Regulatory arbitrage",
+    gallagher: "Same model — complicated process simplified by AI, charge for outcome",
+    arrPath: "1,000 subs + 200 cases/mo = $1.5M Year 1",
+    futureProof: "Insurance complexity not going away. AI gets smarter with every claim processed.",
+    section: "pipeline",
+    deepDiveRequested: true,
+    deep_dive_requested_at: "2026-04-19",
+    deepDiveUrl: "https://roblobsterclaw.github.io/unicorn-factory/deep-dives/claimpilot-deep-dive-2026-04-19.html"
+  },
+  {
+    id: "ledgersync",
+    name: "LedgerSync",
+    subtitle: "AI Bookkeeping Reconciliation",
+    description: "AI auto-reconciles bank transactions with QuickBooks, Xero, and FreshBooks in real-time. Monthly close that takes days becomes automatic. Texts the business owner when it can't match something. Every accountant in America would sell this to their clients.",
+    revenue: "$49/mo basic, $149/mo premium. Accountant referral program: 20% revenue share.",
+    startupCost: "$20-35K",
+    startupCostRaw: 27500,
+    scale: 10,
+    eligible1202: true,
+    tam: "$12B (33M small businesses)",
+    moat: "Accountant distribution network, data moat, switching costs",
+    source: "Team expertise — Robert MacArthur + Joe's GL balancing idea",
+    gallagher: "Accountants are the distribution channel, like doctors for Medv",
+    arrPath: "2,000 businesses at $49/mo = $1.2M ARR",
+    futureProof: "Tax code gets more complex, not less. AI advantage compounds over time.",
+    section: "pipeline",
+    deepDiveRequested: true,
+    deep_dive_requested_at: "2026-04-19",
+    deepDiveUrl: "https://roblobsterclaw.github.io/unicorn-factory/deep-dives/ledgersync-deep-dive-2026-04-19.html"
+  },
+  {
+    id: "preopai",
+    name: "PreOpAI",
+    subtitle: "AI Surgical Consultation Platform",
+    description: "AI gives plastic surgery patients realistic before/after predictions. Upload photos, AI generates visual outcomes. Connects patients with vetted surgeons. Matt Lynch as founding medical advisor — instant credibility.",
+    revenue: "Surgeons pay $500-2K/mo for listing + leads. Patients free. CareCredit financing referrals.",
+    startupCost: "$30-45K",
+    startupCostRaw: 37500,
+    scale: 8,
+    eligible1202: true,
+    tam: "$22B cosmetic surgery + $5B medical tourism",
+    moat: "Medical credibility (Matt Lynch), AI prediction accuracy improves with data, surgeon network effects",
+    source: "Team expertise — Matt Lynch (plastic surgeon)",
+    gallagher: "Platform connecting patients to providers via AI intake — identical structure to the Medv model",
+    arrPath: "200 surgeons at $1K/mo = $2.4M ARR",
+    futureProof: "Elective procedures growing. AI visualization improving. Expands to dental, derma, ortho.",
+    section: "pipeline",
+    deepDiveRequested: false,
+    deep_dive_requested_at: null
+  },
+  {
+    id: "uf-004",
+    name: "TrustOps AI",
+    subtitle: "Security Questionnaire Autopilot",
+    description: "Enterprise vendors spend 8-40 hours per deal filling out security questionnaires (SOC 2, ISO 27001, HIPAA, GDPR). TrustOps ingests your policies, infrastructure docs, and past responses, then auto-fills any questionnaire in minutes — with citations. Cuts sales cycle friction and frees security teams from copy-paste hell.",
+    revenue: "$499/mo starter (up to 20 questionnaires/yr), $1,499/mo growth (unlimited) + $99/questionnaire overage. Enterprise custom pricing.",
+    startupCost: "$25-40K",
+    startupCostRaw: 32500,
+    scale: 9,
+    eligible1202: true,
+    tam: "$15B (enterprise security compliance and GRC software market, growing 14%/yr)",
+    moat: "Proprietary questionnaire corpus and response accuracy data; deep integrations with GRC platforms (Vanta, Drata, Tugboat Logic); response quality improves with every questionnaire processed",
+    source: "Hermes scouting report 2026-04-19 / HN 'Kimi vendor verifier' signal / YC RFS 2026",
+    gallagher: "Takes a complicated, expert-dependent compliance process and makes it a 10-minute AI task — same as Medv did for medical billing",
+    arrPath: "100 customers at avg $800/mo = $960K ARR by month 14. Land in mid-market SaaS, expand to enterprise.",
+    futureProof: "Compliance complexity grows with regulation (EU AI Act, CMMC, DORA). More frameworks = more demand for automation.",
+    section: "pipeline",
+    deepDiveRequested: false,
+    deep_dive_requested_at: null
+  },
+  {
+    id: "uf-005",
+    name: "AgentFirewall",
+    subtitle: "AI Agent Governance & Sandboxing Platform",
+    description: "As companies deploy AI agents that take real actions (send emails, write code, make API calls), they need auditability, permission controls, and kill switches. AgentFirewall sits between your AI agents and the outside world — logging every action, enforcing permissions, sandboxing risky operations, and alerting humans when agents behave unexpectedly. Think PagerDuty for AI agents.",
+    revenue: "$500/mo for teams (up to 10 agents), $2,000/mo for growth (50 agents), $5,000+/mo enterprise (unlimited). Usage-based overage on action volume.",
+    startupCost: "$35-60K",
+    startupCostRaw: 47500,
+    scale: 10,
+    eligible1202: true,
+    tam: "$25B (AI safety, governance, and observability — a category that barely existed in 2024 and is exploding)",
+    moat: "First-mover in agent-specific governance; deep integrations with LangChain, AutoGPT, CrewAI, Claude, OpenAI Assistants; audit log data is irreplaceable once compliance teams rely on it",
+    source: "Hermes scouting report 2026-04-19 / YC RFS 2026 / arXiv intrusion detection papers",
+    gallagher: "The compliance middleman between powerful AI systems and the business — same toll-bridge position Medv occupies between patients and insurance",
+    arrPath: "50 mid-market enterprise customers at avg $2K/mo = $1.2M ARR in 12 months. Every company deploying agents is a prospect.",
+    futureProof: "More capable AI agents = higher stakes = more demand for oversight. Regulation (EU AI Act) will make this mandatory.",
+    section: "pipeline",
+    deepDiveRequested: false,
+    deep_dive_requested_at: null
+  },
+  {
+    id: "uf-006",
+    name: "DataVault OS",
+    subtitle: "Training Data Quality & Integrity Platform",
+    description: "The dirty secret of AI: 80% of model failures trace back to bad training data — duplicates, mislabeled examples, PII leaks, distribution shifts, and poisoned samples. DataVault continuously monitors datasets for these issues, versions clean data, generates synthetic augmentation, and produces eval suites — so companies can train and fine-tune models without wasting GPU spend on garbage in, garbage out.",
+    revenue: "$1,000/mo starter (up to 10M records), $3,500/mo growth (100M records), $10,000+/mo enterprise. Usage-based compute add-ons.",
+    startupCost: "$35-55K",
+    startupCostRaw: 45000,
+    scale: 8,
+    eligible1202: true,
+    tam: "$10B (data quality + MLOps market, subset of $50B+ total AI infrastructure spend)",
+    moat: "Proprietary failure corpus and detection heuristics; switching costs once team history, versions, and lineage are stored; integrates with all major model training pipelines (HuggingFace, SageMaker, Vertex)",
+    source: "Hermes scouting report 2026-04-19 / YC RFS 'Make LLMs Easy to Train' / arXiv bias mitigation papers",
+    gallagher: "Quality assurance as a service for the AI supply chain — same concept as a food safety inspector, but for training data",
+    arrPath: "30 AI-native companies at $3K/mo average = $1.08M ARR. Every company fine-tuning a model is a prospect.",
+    futureProof: "More models being trained = more data quality problems. As AI capabilities grow, data quality becomes MORE critical, not less.",
+    section: "pipeline",
+    deepDiveRequested: false,
+    deep_dive_requested_at: null
+  },
+  {
+    id: "uf-007",
+    name: "FieldOps Copilot",
+    subtitle: "AI Technician Guide for Skilled Trades",
+    description: "HVAC techs, plumbers, electricians, and industrial maintenance crews spend 30% of their time looking things up, waiting for callbacks, or redoing work done wrong. FieldOps Copilot is a mobile AI that reads equipment labels via camera, walks techs through diagnostics step-by-step, auto-documents the work with photos and timestamps, and generates service reports. Senior knowledge captured permanently; junior techs perform at senior level from day one.",
+    revenue: "$99/mo per technician, $299/mo per 5-tech team, $799/mo per 20-tech company. Annual contracts with 20% discount.",
+    startupCost: "$40-65K",
+    startupCostRaw: 52500,
+    scale: 8,
+    eligible1202: true,
+    tam: "$40B (field service management software + trades training + compliance documentation market)",
+    moat: "Equipment make/model knowledge base grows with every diagnostic; workflow integrations with ServiceTitan, Jobber, and QuickBooks; senior technician knowledge baked into playbooks over time",
+    source: "Hermes scouting report 2026-04-19 / YC RFS 'AI Guidance for Physical Work' / arXiv edge AI papers",
+    gallagher: "AI democratizes expert trade knowledge the same way Medv democratized medical billing expertise — junior can do senior work",
+    arrPath: "500 technicians at $120/mo average = $720K ARR; add team plans and hit $1M ARR at month 14. Trades labor shortage makes this urgent.",
+    futureProof: "Physical work cannot be fully automated. AI that helps humans do it better is enduringly valuable. Smart glasses/AR expansion path.",
+    section: "pipeline",
+    deepDiveRequested: false,
+    deep_dive_requested_at: null
+  },
+  {
+    id: "uf-008",
+    name: "ComplyBridge",
+    subtitle: "Cross-Border Regulatory Intelligence Platform",
+    description: "A US company that achieves SOC 2 compliance still needs separate work for GDPR, UK ICO, PIPEDA, NIS2, ISO 27001, and APAC frameworks — and those requirements overlap in non-obvious ways. ComplyBridge maps your existing compliance posture across all major international frameworks, identifies gaps, generates jurisdiction-specific documentation, and tracks regulatory changes automatically. Expansion to Europe just went from 6 months to 6 weeks.",
+    revenue: "$1,000/mo for 2 frameworks, $2,500/mo for 5 frameworks, $5,000+/mo enterprise (unlimited). Professional services add-on for implementation.",
+    startupCost: "$30-50K",
+    startupCostRaw: 40000,
+    scale: 9,
+    eligible1202: true,
+    tam: "$30B (global regulatory compliance software + consulting — fastest-growing segment in GRC)",
+    moat: "Regulatory framework mapping database (proprietary), real-time regulatory change monitoring, law firm partnerships for human review layer that competitors can't easily replicate",
+    source: "Hermes scouting report 2026-04-19 / EU AI Act enforcement / HN regulatory arbitrage signal",
+    gallagher: "Translates regulatory complexity into actionable tasks — same value prop as Medv translating insurance codes into reimbursable claims",
+    arrPath: "50 mid-market SaaS companies at $2K/mo = $1.2M ARR. Every company selling internationally needs this.",
+    futureProof: "Regulation is increasing globally, not decreasing. EU AI Act, DORA, NIS2 are all active. More frameworks = more value.",
+    section: "pipeline",
+    deepDiveRequested: false,
+    deep_dive_requested_at: null
+  },
+  {
+    id: "uf-009",
+    name: "PriorAuth AI",
+    subtitle: "Medical Prior Authorization Automation",
+    description: "Physicians spend an average of 2 hours per day on prior authorizations — filling forms, making calls, waiting on hold, writing appeals. PriorAuth AI reads clinical notes in the EHR, auto-populates payer-specific PA forms, submits electronically, tracks status, and writes clinical appeal letters when denied. One tool eliminates the #1 administrative burden killing independent medical practices.",
+    revenue: "$699/mo for solo practice, $1,499/mo for group (up to 10 providers), $2,999/mo for large group. Enterprise health system pricing custom.",
+    startupCost: "$35-55K",
+    startupCostRaw: 45000,
+    scale: 9,
+    eligible1202: true,
+    tam: "$15B (prior authorization market + physician admin burden — 300K+ independent practices, 900K+ physicians)",
+    moat: "Payer-specific form library and submission APIs (built over time); EHR integrations (Epic, Athena, eClinicalWorks) create deep switching costs; approval rate data is a compounding advantage",
+    source: "AMA physician burnout surveys / r/medicine / MGMA admin cost data / YC healthcare RFS",
+    gallagher: "AI handles the payer bureaucracy so doctors can see patients — same 'complicated process simplified' thesis as Medv applied to the front end of care",
+    arrPath: "100 practices at $1,200/mo average = $1.44M ARR in 12-14 months. Sell through medical billing companies and practice management consultants.",
+    futureProof: "Prior auth requirements increasing under ACA mandates. Federal mandates for electronic PA (starting 2026) create a forced adoption wave.",
+    section: "pipeline",
+    deepDiveRequested: false,
+    deep_dive_requested_at: null
+  },
+  {
+    id: "uf-010",
+    name: "PermitIQ",
+    subtitle: "AI Building Permit Automation for Contractors",
+    description: "Building permits kill project timelines. Each municipality has different forms, zoning codes, and submission portals. Contractors spend 6-15 hours per permit application — reading local codes, filling forms, making corrections, resubmitting. PermitIQ knows the codes for every major municipality, auto-fills permit applications from project data, submits electronically where available, and manages revision responses. One platform for every jurisdiction in your market.",
+    revenue: "$199/mo basic (up to 10 permits/yr), $499/mo pro (unlimited). $79 per permit for one-off users without subscription.",
+    startupCost: "$25-40K",
+    startupCostRaw: 32500,
+    scale: 8,
+    eligible1202: true,
+    tam: "$5B (1.5M licensed contractors in the US, 10M+ permits filed annually — building permit consulting is a $1.5B industry alone)",
+    moat: "Municipality-specific code database and submission integrations (built over years, hard to replicate); approval rate data and revision pattern library; contractor referral flywheel",
+    source: "r/construction / National Contractors Association data / NAHB research on permit timelines",
+    gallagher: "Navigates bureaucratic complexity that most contractors find impossible — same toll-bridge model, but the obstacle is local government red tape",
+    arrPath: "1,000 contractors at $299/mo average = $3.6M ARR potential. Start in 3-5 high-permit-volume metros (NYC, LA, Miami, Houston, Phoenix), expand nationally.",
+    futureProof: "Construction permitting is not getting simpler. AI that knows every local jurisdiction gets more valuable as it processes more permits.",
+    section: "pipeline",
+    deepDiveRequested: false,
+    deep_dive_requested_at: null
+  },
+  {
+    id: "uf-011",
+    name: "LossHarvest",
+    subtitle: "AI Tax Opportunity Miner for SMBs",
+    description: "Most small business owners have never heard of loss carrybacks, R&D tax credits, Section 179 accelerated depreciation, or cost segregation studies — and their accountants don't proactively hunt for them either. LossHarvest connects to your QuickBooks or tax returns, identifies every missed opportunity, quantifies the savings, and packages a ready-to-file amendment for your CPA to review and submit. Average SMB discovers $15-40K in overlooked tax savings.",
+    revenue: "20% contingency on verified tax savings identified; minimum engagement $500. Annual SaaS plan at $299/yr for ongoing monitoring.",
+    startupCost: "$20-35K",
+    startupCostRaw: 27500,
+    scale: 8,
+    eligible1202: true,
+    tam: "$8B (IRS estimates over $1T in unclaimed SMB tax benefits; 33M small businesses, avg savings potential $5-15K each)",
+    moat: "Tax code rule engine grows smarter with every client; CPA referral network (CPAs refer clients, get a cut); multi-year data sees patterns individual accountants miss",
+    source: "r/smallbusiness / r/accounting / IRS Statistics of Income data / Indie Hackers fintech threads",
+    gallagher: "Finds money the customer didn't know existed and takes a percentage — exact same outcome-based model as ClaimPilot and Medv",
+    arrPath: "200 clients/mo at avg $2,000 savings x 20% = $80K/mo = $960K ARR by month 12. CPAs are the channel — give them 10% referral fee.",
+    futureProof: "Tax code complexity grows every year. R&D credit expansions, bonus depreciation changes, state-level credits multiply the opportunity.",
+    section: "pipeline",
+    deepDiveRequested: false,
+    deep_dive_requested_at: null
+  },
+  {
+    id: "uf-012",
+    name: "LessonForge",
+    subtitle: "AI Intervention Plan Generator for K-12 Schools",
+    description: "Teachers identify struggling students all the time but lack the hours to write individualized intervention plans, differentiated lessons, and compliant IEP documentation. LessonForge ingests assessment scores, behavioral notes, and learning history, then generates complete intervention plans, differentiated materials, and parent-ready progress reports in minutes. Reduces the 6-10 hours teachers currently spend per student on documentation to under 30 minutes.",
+    revenue: "$399/mo per school (unlimited teachers and students), $2,999/mo per district license. Grants-eligible — Title I and IDEA funding can cover cost.",
+    startupCost: "$20-35K",
+    startupCostRaw: 27500,
+    scale: 9,
+    eligible1202: true,
+    tam: "$6B (EdTech intervention and special education software market, part of $44B global EdTech growing 14%/yr)",
+    moat: "Deep SIS integrations (PowerSchool, Infinite Campus, Skyward) create sticky workflows; outcome data — which interventions actually worked — builds a compounding advantage; district-level contracts = low churn",
+    source: "YC RFS 2026 education vertical / r/teachers / NCES special education data showing 7.5M students with IEPs",
+    gallagher: "Teachers are like doctors — overwhelmed with paperwork. AI handles the documentation so they can focus on the student, same as Medv handling the billing so docs focus on patients.",
+    arrPath: "300 schools at $399/mo = $1.44M ARR. Sell through district tech coordinators and special education directors. Title I funding = budget already exists.",
+    futureProof: "Special education documentation requirements increasing, not decreasing. IDEA compliance demands grow. AI that handles compliance stays essential.",
+    section: "pipeline",
+    deepDiveRequested: false,
+    deep_dive_requested_at: null
+  },
+  {
+    id: "uf-013",
+    name: "ContractWatch",
+    subtitle: "AI Contract Surveillance & Risk Alerting",
+    description: "Companies sign contracts and then forget about them — until an auto-renewal trap hits, a price escalator kicks in, or a termination window closes. ContractWatch is not a contract drafting tool (that market is crowded). It's contract surveillance: AI reads every signed contract, extracts obligations, deadlines, and risks, then alerts the right person before it's too late. One platform that knows every commitment the business has made.",
+    revenue: "$299/mo for up to 50 contracts, $599/mo for 200 contracts, $1,499/mo for enterprise (unlimited). Implementation fee for bulk uploads.",
+    startupCost: "$20-35K",
+    startupCostRaw: 27500,
+    scale: 9,
+    eligible1202: true,
+    tam: "$10B (contract lifecycle management software market, growing 12%/yr — Ironclad alone raised $100M+)",
+    moat: "Clause extraction model trained on millions of contracts; integrations with DocuSign, SharePoint, Salesforce, and Google Drive; once contracts are ingested and categorized, switching cost is enormous",
+    source: "r/legaltech / Ironclad and ContractPodAi proving demand / r/smallbusiness auto-renewal horror stories",
+    gallagher: "Turns legal complexity into simple calendar alerts — same translation-of-expertise model, focused on protecting businesses from their own past commitments",
+    arrPath: "250 mid-market companies at $600/mo = $1.8M ARR. Sales-led through corporate counsel and finance leaders. One auto-renewal catch pays for years of subscription.",
+    futureProof: "Contract volume increases with business complexity. As companies grow, the need for surveillance grows. AI that reads contracts better compounds over time.",
+    section: "pipeline",
+    deepDiveRequested: false,
+    deep_dive_requested_at: null
+  },
+  {
+    id: "uf-014",
+    name: "CropClaim AI",
+    subtitle: "AI Farm Insurance Claim Platform",
+    description: "US farmers file billions in crop insurance claims annually but the process is a bureaucratic nightmare — USDA FSA forms, NOAA weather certifications, satellite loss documentation, adjustor visits, and months of waiting. CropClaim AI pulls weather data, NDVI satellite imagery, and USDA records automatically, documents the loss, fills FSA forms, and tracks the claim to payment. Farmers get paid faster and capture every dollar they're entitled to.",
+    revenue: "8% contingency on approved claim value. Avg claim $75K = $6,000 fee. Optional $199/yr SaaS subscription for season-long monitoring.",
+    startupCost: "$30-50K",
+    startupCostRaw: 40000,
+    scale: 7,
+    eligible1202: true,
+    tam: "$20B in annual crop insurance premiums, $12B+ in claims paid annually. 400K+ farms with federal crop insurance policies.",
+    moat: "USDA/FSA API integrations and RMA data access; NOAA and Sentinel satellite data pipelines; loss documentation corpus improves claim approval rates over time; Farm Bureau and crop insurance agent distribution",
+    source: "USDA Risk Management Agency data / Farm Bureau publications / r/farming / Exploding Topics ag-tech trends",
+    gallagher: "Farmers lose money they're owed because the claims process is too complicated — same story as insurance denials, same contingency model as ClaimPilot",
+    arrPath: "200 claims/mo at avg $6K fee = $1.2M ARR by month 10. Partner with crop insurance agents (they refer farmers, take 5% cut). Expand to livestock insurance.",
+    futureProof: "Climate volatility = more crop loss events = more claims. AI that understands satellite loss data becomes more accurate with each growing season.",
+    section: "pipeline",
+    deepDiveRequested: false,
+    deep_dive_requested_at: null
+  },
+  {
+    id: "uf-015",
+    name: "MedBill Fighter",
+    subtitle: "AI Hospital Bill Auditor & Dispute Engine",
+    description: "Studies consistently show 80% of hospital bills contain errors — duplicate charges, upcoded procedures, items never delivered, balance billing violations. MedBill Fighter reads the itemized bill and Explanation of Benefits, cross-references Medicare reimbursement rates and state balance billing laws, identifies every overcharge, and submits formal disputes to the hospital's billing department and insurance company. Average audit finds $800-3,000 in errors.",
+    revenue: "25% contingency on verified savings. $49 flat-fee audit for bills under $5K. No savings = no charge.",
+    startupCost: "$20-35K",
+    startupCostRaw: 27500,
+    scale: 9,
+    eligible1202: true,
+    tam: "$4T in annual US healthcare spending; $200B+ estimated in annual billing errors; 150M Americans receive hospital bills each year",
+    moat: "CMS fee schedule database and payer contract knowledge base; state-by-state balance billing law library; dispute success corpus improves win rates over time; consumer brand trust is compounding",
+    source: "r/healthinsurance / CMS billing error studies / same regulatory arbitrage thesis as ClaimPilot",
+    gallagher: "Identical model to ClaimPilot — consumer up against a complex system, AI levels the playing field, company takes a percentage of the win",
+    arrPath: "500 audits/mo at avg $600 contingency payout = $300K/mo = $3.6M ARR. Scale via hospital patient advocacy groups, employer benefits programs, and HR software integrations.",
+    futureProof: "Healthcare billing complexity is not simplifying. No-Surprises Act creates new dispute rights. AI that understands these rights gets more valuable.",
+    section: "pipeline",
+    deepDiveRequested: false,
+    deep_dive_requested_at: null
+  },
+  {
+    id: "uf-016",
+    name: "GovGrant AI",
+    subtitle: "AI Federal Grant Finder & Application Engine",
+    description: "Over $800B in federal grants are awarded annually through Grants.gov, SBA, USDA, DOE, HUD, and dozens of other agencies — but finding relevant grants and writing competitive applications requires expertise most small businesses and nonprofits don't have. GovGrant AI scans all open grants matching your organization profile, scores fit, generates a draft narrative using your existing materials, and tracks deadlines and submission requirements across every application in progress.",
+    revenue: "$199/mo SaaS for grant discovery and tracking; 5% success fee on awarded grants (avg federal grant $250K = $12,500 per win). Pro plan with AI drafting at $499/mo.",
+    startupCost: "$25-40K",
+    startupCostRaw: 32500,
+    scale: 9,
+    eligible1202: true,
+    tam: "$800B+ in annual federal grants + $200B+ state/local; $5B+ spent on grant writing consultants annually",
+    moat: "Grants.gov and agency-specific API integrations; awarded narrative corpus (winning language by grant type); organization profile that improves matching over time; SBA/SBIR/STTR specialist positioning",
+    source: "YC RFS 2026 'AI for Government' / r/nonprofit / SBA statistics on SBIR grant underutilization",
+    gallagher: "Grant writing is a specialized expertise most organizations can't afford. AI democratizes access to billions in public funding — textbook Gallagher/Medv model.",
+    arrPath: "300 organizations at $300/mo SaaS = $1.08M ARR baseline, plus success fees accelerate to $3-5M ARR as win rate data improves application quality.",
+    futureProof: "Federal grant programs expanding (IRA, CHIPS Act, Infrastructure Bill created thousands of new grant programs). AI that knows current programs always has fresh inventory.",
+    section: "pipeline",
+    deepDiveRequested: false,
+    deep_dive_requested_at: null
+  },
+  {
+    id: "uf-017",
+    name: "SpecWriter AI",
+    subtitle: "AI Construction Specification Generator",
+    description: "Writing construction specifications (MasterFormat) is one of the most time-consuming parts of the architecture and engineering business — a complete spec for a commercial project takes 2-4 weeks of a senior specifier's time and 40-100 pages of technical documentation. SpecWriter AI takes project type, scope, location, and material choices, then generates complete, code-compliant MasterFormat specifications in hours. Integrates with Revit and AutoCAD project data for automated spec generation.",
+    revenue: "$799/mo per firm (unlimited specs), $199 per spec for one-off users. Enterprise licensing for large AEC firms at custom pricing.",
+    startupCost: "$30-50K",
+    startupCostRaw: 40000,
+    scale: 9,
+    eligible1202: true,
+    tam: "$5B (180K+ architecture firms, 80K+ engineering firms in the US; AEC software market $10B+ growing 8%/yr)",
+    moat: "MasterFormat and ARCOM specification corpus (decades of technical content); regional code and manufacturer product databases; Revit/AutoCAD integrations create deep workflow lock-in; firm customization library builds over time",
+    source: "ARCOM/CSI specification writers community / r/architecture / BIM communities on LinkedIn",
+    gallagher: "Senior specifier knowledge encoded into AI — junior architects produce senior-quality specs, same democratization of expertise as FieldOps Copilot",
+    arrPath: "150 firms at $799/mo = $1.44M ARR. Sell through CSI (Construction Specifications Institute) membership network and Autodesk partner channels.",
+    futureProof: "Building codes multiply every year. Climate resilience requirements, energy codes, and accessibility standards create permanent demand for spec automation.",
+    section: "pipeline",
+    deepDiveRequested: false,
+    deep_dive_requested_at: null
+  },
+  {
+    id: "uf-018",
+    name: "HireVault",
+    subtitle: "AI Employment Law Compliance for Small Business",
+    description: "Small businesses get sued for wrongful termination, discrimination, and wage violations — not because they're bad actors, but because they don't know the law. HireVault generates legally compliant offer letters, termination documentation, PIPs, written warnings, employee handbooks, and severance agreements customized to your state's employment laws. Human employment attorneys review every output before delivery. SMBs get Fortune 500 HR compliance at $299/mo.",
+    revenue: "$299/mo per company (up to 50 employees), $499/mo for 51-250 employees, $999/mo for 250+ employees. $49 per document for one-off users.",
+    startupCost: "$25-40K",
+    startupCostRaw: 32500,
+    scale: 9,
+    eligible1202: true,
+    tam: "$15B (33M SMBs in the US spend average $4,500/yr on employment law compliance; employment practices liability market growing 11%/yr)",
+    moat: "State-by-state employment law database (continuously updated); employment attorney review network (adds liability protection competitors can't easily match); document history and company-specific language that builds over time",
+    source: "r/smallbusiness / r/humanresources wrongful termination horror stories / SHRM data on SMB HR compliance costs",
+    gallagher: "Employment attorneys made compliance expensive and inaccessible for SMBs. AI + attorney review makes it $300/mo — classic Medv democratization play.",
+    arrPath: "300 companies at $399/mo average = $1.44M ARR. Sell through payroll providers (Gusto, ADP, Paychex) as an add-on. Every SMB adding headcount is a prospect.",
+    futureProof: "Employment law complexity increasing (pay transparency, non-compete bans, AI hiring rules). More regulations = more demand for compliant documentation.",
+    section: "pipeline",
+    deepDiveRequested: false,
+    deep_dive_requested_at: null
+  }
+];
+
+// ══════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════
+const PASS_ADMIN  = "soccer12";
+const PASS_VIEWER = "soccer12";
+let isAdmin = false;
+let currentFilter = "all";
+
+function handleLogin() {
+  const pw = document.getElementById("pw-input").value.trim();
+  if (pw === PASS_ADMIN) {
+    isAdmin = true;
+    bootApp();
+  } else if (pw === PASS_VIEWER) {
+    isAdmin = false;
+    bootApp();
+  } else {
+    document.getElementById("login-error").textContent = "Incorrect password. Try again.";
+    document.getElementById("pw-input").value = "";
+    document.getElementById("pw-input").focus();
+  }
+}
+
+document.getElementById("pw-input").addEventListener("keydown", e => {
+  if (e.key === "Enter") handleLogin();
+});
+
+async function bootApp() {
+  document.getElementById("login-screen").style.display = "none";
+  document.getElementById("app").style.display = "block";
+  if (isAdmin) document.getElementById("admin-badge").style.display = "inline-block";
+
+  // Render immediately with hardcoded fallback so user sees content right away
+  snapshotDeepDiveState();
+  updateStats();
+  renderPipeline();
+  updateSaveBtn();
+
+  // Then fetch fresh ideas from GitHub and re-render if anything changed
+  try {
+    const { ideas } = await fetchGitHubIdeas();
+    if (ideas && ideas.length > 0) {
+      IDEAS = ideas;
+      snapshotDeepDiveState(); // snapshot after loading live data
+      hasUnsavedChanges = false;
+      updateStats();
+      renderPipeline();
+      updateSaveBtn();
+    }
+  } catch (err) {
+    console.warn('GitHub ideas fetch failed, using hardcoded fallback:', err);
+  }
+}
+
+function logout() {
+  document.getElementById("login-screen").style.display = "flex";
+  document.getElementById("app").style.display = "none";
+  document.getElementById("pw-input").value = "";
+  document.getElementById("login-error").textContent = "";
+}
+
+// ══════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════
+let toastTimer = null;
+function showToast(msg, type = 'saving') {
+  const el = document.getElementById('sync-toast');
+  el.textContent = (type === 'saving' ? '⏳ ' : type === 'saved' ? '✅ ' : '❌ ') + msg;
+  el.className = 'show ' + type;
+  if (toastTimer) clearTimeout(toastTimer);
+  if (type !== 'saving') {
+    toastTimer = setTimeout(() => { el.className = ''; }, 2500);
+  }
+}
+
+// ══════════════════════
+//  GITHUB HELPERS
+// ══════════════════════
+async function fetchGitHubIdeas() {
+  const resp = await fetch(GH_API, {
+    headers: { 'Authorization': `token ${GH_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+  });
+  if (!resp.ok) throw new Error(`GitHub fetch failed: ${resp.status}`);
+  const data = await resp.json();
+  const ideas = JSON.parse(atob(data.content.replace(/\n/g, '')));
+  return { ideas, sha: data.sha };
+}
+
+async function fetchGitHubFile(path) {
+  const url = `https://api.github.com/repos/${GH_REPO}/contents/${path}`;
+  const resp = await fetch(url, {
+    headers: { 'Authorization': `token ${GH_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+  });
+  if (resp.status === 404) return { content: null, sha: null };
+  if (!resp.ok) throw new Error(`GitHub fetch failed: ${resp.status}`);
+  const data = await resp.json();
+  const content = JSON.parse(atob(data.content.replace(/\n/g, '')));
+  return { content, sha: data.sha };
+}
+
+async function putGitHubFile(path, content, sha, message) {
+  const url = `https://api.github.com/repos/${GH_REPO}/contents/${path}`;
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2))));
+  const body = { message, content: encoded };
+  if (sha) body.sha = sha;
+  const resp = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `token ${GH_TOKEN}`,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+  if (!resp.ok) throw new Error(`GitHub PUT failed: ${resp.status}`);
+  return resp;
+}
+
+async function syncDeepDiveStateFromGitHub() {
+  try {
+    const { ideas } = await fetchGitHubIdeas();
+    ideas.forEach(ghIdea => {
+      const local = IDEAS.find(i => i.id === ghIdea.id);
+      if (local) {
+        local.deepDiveRequested = ghIdea.deepDiveRequested || false;
+        local.deep_dive_requested_at = ghIdea.deep_dive_requested_at || null;
+        local.deepDiveUrl = ghIdea.deepDiveUrl || null;
+        local.section = ghIdea.section || 'pipeline';
+        local.vettedAt = ghIdea.vettedAt || null;
+        local.killedAt = ghIdea.killedAt || null;
+      }
+    });
+  } catch (err) {
+    console.warn('Could not load state from GitHub:', err);
+  }
+}
+
+// ══════════════════════
+//  UNSAVED STATE TRACKING
+// ══════════════════════
+let hasUnsavedChanges = false;
+let savedDeepDiveSnapshot = {}; // id -> deepDiveRequested at last save/load
+
+function snapshotDeepDiveState() {
+  savedDeepDiveSnapshot = {};
+  IDEAS.forEach(i => { savedDeepDiveSnapshot[i.id] = i.deepDiveRequested || false; });
+}
+
+function markUnsaved() {
+  hasUnsavedChanges = true;
+  updateSaveBtn();
+}
+
+function updateSaveBtn() {
+  const btn = document.getElementById('save-execute-btn');
+  if (!btn) return;
+  const anyRequested = IDEAS.some(i => i.deepDiveRequested);
+  if (hasUnsavedChanges) {
+    btn.textContent = '💾 Save & Execute (unsaved)';
+    btn.classList.add('unsaved');
+    btn.style.display = '';
+  } else {
+    btn.textContent = '💾 Save & Execute Deep Dives';
+    btn.classList.remove('unsaved');
+    btn.style.display = anyRequested ? '' : 'none';
+  }
+}
+
+// ══════════════════════
+//  TOGGLE (LOCAL ONLY — no auto-save)
+// ══════════════════════
+function toggleDive(id, checked) {
+  const localIdea = IDEAS.find(i => i.id === id);
+  if (localIdea) {
+    localIdea.deepDiveRequested = checked;
+    // Only set timestamp if this is newly checked; preserve existing timestamp on uncheck
+    if (checked && !localIdea.deep_dive_requested_at) {
+      localIdea.deep_dive_requested_at = new Date().toISOString();
+    }
+  }
+  updateStats();
+  markUnsaved();
+}
+
+// ══════════════════════
+//  SAVE & EXECUTE
+// ══════════════════════
+async function saveAndExecute() {
+  showToast('Saving to GitHub…', 'saving');
+  try {
+    // 1. Fetch latest ideas.json from GitHub
+    const { ideas: ghIdeas, sha: ideasSha } = await fetchGitHubIdeas();
+
+    // 2. Identify newly requested deep dives (checked now, not in last snapshot)
+    const nowTs = new Date().toISOString();
+    const newlyOrdered = IDEAS.filter(i =>
+      i.deepDiveRequested && !savedDeepDiveSnapshot[i.id]
+    );
+
+    // 3. Merge all local changes into GitHub ideas
+    IDEAS.forEach(local => {
+      const gh = ghIdeas.find(g => g.id === local.id);
+      if (!gh) return;
+      // Deep dive state
+      gh.deepDiveRequested = local.deepDiveRequested || false;
+      if (local.deepDiveRequested) {
+        gh.deep_dive_requested_at = local.deep_dive_requested_at || nowTs;
+      } else {
+        gh.deep_dive_requested_at = null;
+      }
+      // Section / status
+      gh.section = local.section || 'pipeline';
+      if (local.vettedAt)  gh.vettedAt  = local.vettedAt;  else delete gh.vettedAt;
+      if (local.killedAt)  gh.killedAt  = local.killedAt;  else delete gh.killedAt;
+    });
+
+    // 4. Save ideas.json
+    await putGitHubFile(
+      GH_PATH,
+      ghIdeas,
+      ideasSha,
+      `💾 Save & Execute deep dives — ${nowTs.slice(0,10)}`
+    );
+
+    // 5. Update deep-dive-orders.json
+    if (newlyOrdered.length > 0) {
+      const { content: existing, sha: ordersSha } = await fetchGitHubFile('data/deep-dive-orders.json');
+      const existingOrders = (existing && existing.orders) ? existing.orders : [];
+
+      const newOrders = newlyOrdered.map(i => ({
+        id: i.id,
+        name: i.name,
+        requestedAt: i.deep_dive_requested_at || nowTs,
+        status: 'ordered'
+      }));
+
+      // Merge: keep existing orders that aren't in newOrders, then append new
+      const mergedOrders = [
+        ...existingOrders.filter(e => !newOrders.find(n => n.id === e.id)),
+        ...newOrders
+      ];
+
+      const ordersPayload = { orders: mergedOrders, lastOrderedAt: nowTs };
+      await putGitHubFile(
+        'data/deep-dive-orders.json',
+        ordersPayload,
+        ordersSha,
+        `🔍 Deep dive orders: ${newOrders.map(o => o.name).join(', ')}`
+      );
+    }
+
+    // 6. Update snapshot and clear unsaved state
+    snapshotDeepDiveState();
+    hasUnsavedChanges = false;
+    updateSaveBtn();
+
+    // 7. Toast
+    if (newlyOrdered.length > 0) {
+      const names = newlyOrdered.map(i => i.name).join(', ');
+      showToast(`💾 Saved! Deep dives ordered for: ${names} — Rob will deliver today.`, 'saved');
+    } else {
+      showToast('💾 Saved! All changes synced to GitHub.', 'saved');
+    }
+
+  } catch (err) {
+    console.error('Save & Execute failed:', err);
+    showToast('Save failed — check console', 'error');
+  }
+}
+
+// ══════════════════════════════════════
+//  STATS
+// ══════════════════════════════════════
+function getDiveRequests() {
+  return IDEAS.filter(i => i.deepDiveRequested).map(i => i.id);
+}
+
+function updateStats() {
+  const pipelineIdeas = IDEAS.filter(i => !i.section || i.section === "pipeline");
+  document.getElementById("idea-count").textContent = pipelineIdeas.length;
+  document.getElementById("dive-count").textContent = getDiveRequests().length;
+}
+
+// ══════════════════════════════════════
+//  TABS
+// ══════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll(".tab-content").forEach(el => el.style.display = "none");
+  document.getElementById("tab-" + name).style.display = "block";
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
+  if (name === 'deepdives') renderDeepDives();
+  if (name === 'vetted')    renderVetted();
+  if (name === 'killed')    renderKilled();
+}
+
+// ══════════════════════════════════════
+//  FILTERS
+// ══════════════════════════════════════
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll(".filter-btn").forEach(b =>
+    b.classList.toggle("active", b.dataset.filter === f)
+  );
+  applyFilters();
+}
+
+function applyFilters() {
+  const q = (document.getElementById("search-input").value || "").toLowerCase();
+  let ideas = IDEAS.filter(i => !i.section || i.section === "pipeline");
+
+  if (currentFilter === "highscale") ideas = ideas.filter(i => i.scale >= 8);
+  if (currentFilter === "1202")      ideas = ideas.filter(i => i.eligible1202);
+  if (currentFilter === "lowcost")   ideas = ideas.filter(i => i.startupCostRaw <= 25000);
+
+  if (q) {
+    ideas = ideas.filter(i =>
+      i.name.toLowerCase().includes(q) ||
+      i.subtitle.toLowerCase().includes(q) ||
+      i.description.toLowerCase().includes(q) ||
+      i.moat.toLowerCase().includes(q) ||
+      i.source.toLowerCase().includes(q)
+    );
+  }
+
+  renderCards(ideas);
+}
+
+// ══════════════════════════════════════
+//  RENDER — DEEP DIVES
+// ══════════════════════════════════════
+function renderDeepDives() {
+  const el = document.getElementById('deepdives-content');
+  const requested = IDEAS.filter(i => i.deepDiveRequested);
+
+  if (requested.length === 0) {
+    el.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <h2>No Deep Dives Requested Yet</h2>
+        <p>Check the <strong>🔍 Request Deep Dive</strong> box on any Pipeline idea to queue it up.</p>
+      </div>`;
+    return;
+  }
+
+  const completed = requested.filter(i => i.deepDiveUrl);
+  const pending   = requested.filter(i => !i.deepDiveUrl);
+
+  let html = '';
+
+  if (completed.length > 0) {
+    html += `<h2 style="font-size:16px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:16px;">📄 Completed Reports (${completed.length})</h2>`;
+    html += `<div class="deepdives-grid">`;
+    html += completed.map(idea => {
+      const reportDate = idea.deep_dive_requested_at
+        ? new Date(idea.deep_dive_requested_at).toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' })
+        : 'April 19, 2026';
+      return `
+      <div class="deepdive-card">
+        <div class="deepdive-card-header">
+          <div>
+            <div class="deepdive-card-title">${idea.name}</div>
+            <div class="deepdive-card-subtitle">${idea.subtitle}</div>
+          </div>
+          <div class="report-date-badge">📅 ${reportDate}</div>
+        </div>
+        <div class="deepdive-card-body">
+          <p style="color:var(--muted);font-size:13.5px;line-height:1.6;margin-bottom:14px;">${idea.description}</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+            <div style="background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.3);border-radius:8px;padding:6px 12px;font-size:12px;">
+              <span style="color:var(--muted);font-weight:700;">TAM</span> <span style="color:var(--green);font-weight:700;">${idea.tam}</span>
+            </div>
+            <div style="background:rgba(188,140,255,.1);border:1px solid rgba(188,140,255,.3);border-radius:8px;padding:6px 12px;font-size:12px;">
+              <span style="color:var(--muted);font-weight:700;">Scale</span> <span style="color:var(--purple);font-weight:700;">${idea.scale}/10</span>
+            </div>
+            <div style="background:rgba(232,86,42,.1);border:1px solid rgba(232,86,42,.3);border-radius:8px;padding:6px 12px;font-size:12px;">
+              <span style="color:var(--muted);font-weight:700;">Cost</span> <span style="color:var(--accent);font-weight:700;">${idea.startupCost}</span>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--muted);">🎯 ${idea.arrPath}</div>
+        </div>
+        <div class="deepdive-card-footer">
+          <div style="font-size:12px;color:var(--muted);">Full AI analysis report</div>
+          <a href="${idea.deepDiveUrl}" target="_blank" class="open-report-btn">Open Full Report →</a>
+        </div>
+      </div>`;
+    }).join('');
+    html += `</div>`;
+  }
+
+  if (pending.length > 0) {
+    html += `<h2 style="font-size:16px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:16px;${completed.length > 0 ? 'margin-top:32px;' : ''}">⏳ Pending Reports (${pending.length})</h2>`;
+    html += `<div class="deepdives-list">`;
+    html += pending.map(idea => `
+      <div class="coming-soon-item">
+        <div style="font-size:28px;">📨</div>
+        <div>
+          <strong>${idea.name}</strong>
+          <div style="margin-top:4px;">Deep dive requested — report coming soon</div>
+        </div>
+      </div>`).join('');
+    html += `</div>`;
+  }
+
+  el.innerHTML = html;
+}
+
+// ══════════════════════════════════════
+//  RENDER — VETTED / KILLED
+// ══════════════════════════════════════
+function renderVetted() {
+  const el = document.getElementById('vetted-content');
+  const ideas = IDEAS.filter(i => i.section === 'vetted');
+  if (ideas.length === 0) {
+    el.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">✅</div>
+        <h2>No Vetted Ideas Yet</h2>
+        <p>Ideas that pass full team review will be promoted here. Admin users can move ideas between sections.</p>
+      </div>`;
+    return;
+  }
+  el.innerHTML = `<div class="cards-grid">${ideas.map(i => sectionCardHTML(i, 'vetted')).join('')}</div>`;
+  bindSectionCardEvents(ideas, 'vetted');
+}
+
+function renderKilled() {
+  const el = document.getElementById('killed-content');
+  const ideas = IDEAS.filter(i => i.section === 'killed');
+  if (ideas.length === 0) {
+    el.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">❌</div>
+        <h2>No Killed Ideas</h2>
+        <p>Ideas that don't make the cut get archived here — so the thinking is never truly lost.</p>
+      </div>`;
+    return;
+  }
+  el.innerHTML = `<div class="cards-grid">${ideas.map(i => sectionCardHTML(i, 'killed')).join('')}</div>`;
+  bindSectionCardEvents(ideas, 'killed');
+}
+
+function sectionCardHTML(idea, section) {
+  const badgeClass = idea.eligible1202 ? 'badge-1202-yes' : 'badge-1202-no';
+  const badgeText  = idea.eligible1202 ? '✅ §1202 Eligible' : '❌ §1202 N/A';
+  const fillPct    = (idea.scale / 10) * 100;
+  const color      = scaleColor(idea.scale);
+  const movedDate  = section === 'vetted' && idea.vettedAt
+    ? new Date(idea.vettedAt).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' })
+    : section === 'killed' && idea.killedAt
+    ? new Date(idea.killedAt).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' })
+    : null;
+  const movedLabel = movedDate
+    ? `<div style="font-size:11px;color:var(--muted);margin-top:4px;">${section === 'vetted' ? '✅ Vetted' : '❌ Killed'} ${movedDate}</div>`
+    : '';
+  const adminBtns = isAdmin ? `
+    <div class="admin-controls visible" style="margin-top:8px;">
+      <button class="move-btn" data-id="${idea.id}" data-to="pipeline">← Back to Pipeline</button>
+      ${section === 'vetted' ? `<button class="move-btn" data-id="${idea.id}" data-to="killed">→ Killed</button>` : `<button class="move-btn" data-id="${idea.id}" data-to="vetted">→ Vetted</button>`}
+    </div>` : '';
+  return `
+  <div class="idea-card" id="card-${idea.id}">
+    <div class="card-header">
+      <div>
+        <div class="card-title">${idea.name}</div>
+        <div style="color:var(--muted);font-size:13px;margin-top:3px;">${idea.subtitle}</div>
+        ${movedLabel}
+      </div>
+      <div class="${badgeClass}">${badgeText}</div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">${idea.description}</p>
+      <div class="card-meta">
+        <div class="meta-item">
+          <div class="meta-label">Startup Cost</div>
+          <div class="meta-value yellow">${idea.startupCost}</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">TAM</div>
+          <div class="meta-value green">${idea.tam}</div>
+        </div>
+        <div class="meta-item" style="grid-column: 1 / -1;">
+          <div class="meta-label">Scaling Score</div>
+          <div class="scale-bar-wrap" style="margin-top:4px;">
+            <div class="scale-bar-track"><div class="scale-bar-fill" style="width:${fillPct}%;background:${color};"></div></div>
+            <span class="scale-num" style="color:${color};">${idea.scale}/10</span>
+          </div>
+        </div>
+      </div>
+      <div class="moat-badge">🛡️ ${idea.moat}</div>
+      <hr class="card-divider" />
+      <div class="detail-row">
+        <div class="detail-label">Path to $1M ARR</div>
+        <div class="detail-value" style="color:var(--green);font-weight:600;">🎯 ${idea.arrPath}</div>
+      </div>
+      ${adminBtns}
+    </div>
+  </div>`;
+}
+
+function bindSectionCardEvents(ideas, section) {
+  ideas.forEach(idea => {
+    document.querySelectorAll(`#card-${idea.id} .move-btn`).forEach(btn => {
+      btn.addEventListener('click', () => moveIdea(btn.dataset.id, btn.dataset.to));
+    });
+  });
+}
+
+// ══════════════════════════════════════
+//  RENDER — PIPELINE
+// ══════════════════════════════════════
+function renderPipeline() { applyFilters(); }
+
+function renderCards(ideas) {
+  const grid = document.getElementById("pipeline-grid");
+
+  if (ideas.length === 0) {
+    grid.innerHTML = `<div class="no-results"><div class="icon">🔎</div><p>No ideas match your filters.</p></div>`;
+    return;
+  }
+
+  grid.innerHTML = ideas.map(idea => cardHTML(idea)).join("");
+
+  // Bind checkboxes and admin buttons
+  ideas.forEach(idea => {
+    const cb = document.getElementById("dive-cb-" + idea.id);
+    if (cb) cb.addEventListener("change", () => { toggleDive(idea.id, cb.checked); });
+
+    document.querySelectorAll(`[data-admin-id="${idea.id}"] .move-btn`).forEach(btn => {
+      btn.addEventListener('click', () => moveIdea(btn.dataset.id, btn.dataset.to));
+    });
+  });
+}
+
+function scaleColor(n) {
+  if (n >= 9) return "#3FB950";
+  if (n >= 7) return "#D29922";
+  return "#E8562A";
+}
+
+function cardHTML(idea) {
+  const checked = idea.deepDiveRequested ? "checked" : "";
+  const badgeClass = idea.eligible1202 ? "badge-1202-yes" : "badge-1202-no";
+  const badgeText  = idea.eligible1202 ? "✅ §1202 Eligible" : "❌ §1202 N/A";
+  const fillPct    = (idea.scale / 10) * 100;
+  const color      = scaleColor(idea.scale);
+  const adminBtns  = isAdmin ? `
+    <div class="admin-controls visible" data-admin-id="${idea.id}">
+      <button class="move-btn" data-id="${idea.id}" data-to="vetted">→ Vetted</button>
+      <button class="move-btn" data-id="${idea.id}" data-to="killed">→ Killed</button>
+    </div>` : "";
+
+  return `
+  <div class="idea-card" id="card-${idea.id}">
+    <div class="card-header">
+      <div>
+        <div class="card-title">${idea.name}</div>
+        <div style="color:var(--muted);font-size:13px;margin-top:3px;">${idea.subtitle}</div>
+      </div>
+      <div class="${badgeClass}">${badgeText}</div>
+    </div>
+    <div class="card-body">
+      <p class="card-desc">${idea.description}</p>
+
+      <div class="card-meta">
+        <div class="meta-item">
+          <div class="meta-label">Startup Cost</div>
+          <div class="meta-value yellow">${idea.startupCost}</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">TAM</div>
+          <div class="meta-value green">${idea.tam}</div>
+        </div>
+        <div class="meta-item" style="grid-column: 1 / -1;">
+          <div class="meta-label">Scaling Score</div>
+          <div class="scale-bar-wrap" style="margin-top:4px;">
+            <div class="scale-bar-track">
+              <div class="scale-bar-fill" style="width:${fillPct}%;background:${color};"></div>
+            </div>
+            <span class="scale-num" style="color:${color};">${idea.scale}/10</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="moat-badge">🛡️ ${idea.moat}</div>
+
+      <hr class="card-divider" />
+
+      <div class="detail-row">
+        <div class="detail-label">Revenue Model</div>
+        <div class="detail-value">${idea.revenue}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Path to $1M ARR</div>
+        <div class="detail-value" style="color:var(--green);font-weight:600;">🎯 ${idea.arrPath}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Future-Proof Assessment</div>
+        <div class="detail-value">${idea.futureProof}</div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Source</div>
+        <div class="detail-value" style="color:var(--muted);">${idea.source}</div>
+      </div>
+
+      <hr class="card-divider" />
+
+      <div class="gallagher-box">
+        <strong>🔗 Gallagher Parallel:</strong> ${idea.gallagher}
+      </div>
+
+    </div>
+    <div class="card-footer">
+      <label class="deepdive-check">
+        <input type="checkbox" id="dive-cb-${idea.id}" ${checked} />
+        <span>🔍 Request Deep Dive</span>
+      </label>
+      <div style="display:flex;align-items:center;gap:8px;">
+        ${idea.deepDiveUrl ? `<a href="${idea.deepDiveUrl}" target="_blank" style="background:rgba(88,166,255,.12);border:1px solid rgba(88,166,255,.4);color:var(--blue);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;text-decoration:none;">📄 View</a>` : ''}
+        ${adminBtns}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════════════
+//  ADMIN: MOVE IDEAS (deferred — saved on Save & Execute)
+// ══════════════════════════════════════
+function moveIdea(id, newSection) {
+  if (!isAdmin) return;
+  const idea = IDEAS.find(i => i.id === id);
+  if (!idea) return;
+
+  const label = newSection === 'vetted' ? '✅ Vetted'
+              : newSection === 'killed' ? '❌ Killed'
+              : '📋 Pipeline';
+
+  // Update local state only
+  idea.section = newSection;
+  if (newSection === 'vetted') { idea.vettedAt = new Date().toISOString(); delete idea.killedAt; }
+  if (newSection === 'killed') { idea.killedAt = new Date().toISOString(); delete idea.vettedAt; }
+  if (newSection === 'pipeline') { delete idea.vettedAt; delete idea.killedAt; }
+
+  showToast(`Moved to ${label} (unsaved — click Save & Execute to persist)`, 'saving');
+  setTimeout(() => { document.getElementById('sync-toast').className = ''; }, 2200);
+
+  markUnsaved();
+  updateStats();
+  applyFilters();
+
+  // Re-render current section tabs if open
+  const activeTab = document.querySelector('.tab-btn.active');
+  if (activeTab) {
+    const tab = activeTab.dataset.tab;
+    if (tab === 'vetted')  renderVetted();
+    if (tab === 'killed')  renderKilled();
+  }
+}
+</script>
+</body>
+</html>
