@@ -528,6 +528,37 @@
       margin-bottom: 32px;
     }
 
+    /* ── SAVE & EXECUTE BUTTON ── */
+    .save-execute-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      padding: 13px 28px;
+      cursor: pointer;
+      transition: opacity .2s, box-shadow .2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .save-execute-btn:hover { opacity: .88; }
+    .save-execute-btn.unsaved {
+      animation: pulse-orange 1.4s ease-in-out infinite;
+      box-shadow: 0 0 0 0 rgba(232,86,42,.6);
+    }
+    @keyframes pulse-orange {
+      0%   { box-shadow: 0 0 0 0 rgba(232,86,42,.6); }
+      60%  { box-shadow: 0 0 0 10px rgba(232,86,42,0); }
+      100% { box-shadow: 0 0 0 0 rgba(232,86,42,0); }
+    }
+    #save-execute-bar {
+      max-width: 1280px;
+      margin: 16px auto 0;
+      padding: 0 24px;
+    }
+
     /* ── RESPONSIVE ── */
     @media (max-width: 600px) {
       .header-inner { flex-direction: column; align-items: flex-start; }
@@ -581,6 +612,12 @@
 
   <!-- PIPELINE TAB -->
   <div id="tab-pipeline" class="tab-content">
+    <!-- SAVE & EXECUTE BAR -->
+    <div id="save-execute-bar">
+      <button id="save-execute-btn" class="save-execute-btn" onclick="saveAndExecute()" style="display:none;">
+        💾 Save &amp; Execute Deep Dives
+      </button>
+    </div>
     <div class="toolbar">
       <div class="search-wrap">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -1035,16 +1072,21 @@ async function bootApp() {
   if (isAdmin) document.getElementById("admin-badge").style.display = "inline-block";
 
   // Render immediately with hardcoded fallback so user sees content right away
+  snapshotDeepDiveState();
   updateStats();
   renderPipeline();
+  updateSaveBtn();
 
   // Then fetch fresh ideas from GitHub and re-render if anything changed
   try {
     const { ideas } = await fetchGitHubIdeas();
     if (ideas && ideas.length > 0) {
       IDEAS = ideas;
+      snapshotDeepDiveState(); // snapshot after loading live data
+      hasUnsavedChanges = false;
       updateStats();
       renderPipeline();
+      updateSaveBtn();
     }
   } catch (err) {
     console.warn('GitHub ideas fetch failed, using hardcoded fallback:', err);
@@ -1072,9 +1114,9 @@ function showToast(msg, type = 'saving') {
   }
 }
 
-// ══════════════════════════════════════
-//  GITHUB DEEP-DIVE SYNC
-// ══════════════════════════════════════
+// ══════════════════════
+//  GITHUB HELPERS
+// ══════════════════════
 async function fetchGitHubIdeas() {
   const resp = await fetch(GH_API, {
     headers: { 'Authorization': `token ${GH_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
@@ -1083,6 +1125,36 @@ async function fetchGitHubIdeas() {
   const data = await resp.json();
   const ideas = JSON.parse(atob(data.content.replace(/\n/g, '')));
   return { ideas, sha: data.sha };
+}
+
+async function fetchGitHubFile(path) {
+  const url = `https://api.github.com/repos/${GH_REPO}/contents/${path}`;
+  const resp = await fetch(url, {
+    headers: { 'Authorization': `token ${GH_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+  });
+  if (resp.status === 404) return { content: null, sha: null };
+  if (!resp.ok) throw new Error(`GitHub fetch failed: ${resp.status}`);
+  const data = await resp.json();
+  const content = JSON.parse(atob(data.content.replace(/\n/g, '')));
+  return { content, sha: data.sha };
+}
+
+async function putGitHubFile(path, content, sha, message) {
+  const url = `https://api.github.com/repos/${GH_REPO}/contents/${path}`;
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2))));
+  const body = { message, content: encoded };
+  if (sha) body.sha = sha;
+  const resp = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `token ${GH_TOKEN}`,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+  if (!resp.ok) throw new Error(`GitHub PUT failed: ${resp.status}`);
+  return resp;
 }
 
 async function syncDeepDiveStateFromGitHub() {
@@ -1104,41 +1176,136 @@ async function syncDeepDiveStateFromGitHub() {
   }
 }
 
-async function toggleDive(id, checked) {
+// ══════════════════════
+//  UNSAVED STATE TRACKING
+// ══════════════════════
+let hasUnsavedChanges = false;
+let savedDeepDiveSnapshot = {}; // id -> deepDiveRequested at last save/load
+
+function snapshotDeepDiveState() {
+  savedDeepDiveSnapshot = {};
+  IDEAS.forEach(i => { savedDeepDiveSnapshot[i.id] = i.deepDiveRequested || false; });
+}
+
+function markUnsaved() {
+  hasUnsavedChanges = true;
+  updateSaveBtn();
+}
+
+function updateSaveBtn() {
+  const btn = document.getElementById('save-execute-btn');
+  if (!btn) return;
+  const anyRequested = IDEAS.some(i => i.deepDiveRequested);
+  if (hasUnsavedChanges) {
+    btn.textContent = '💾 Save & Execute (unsaved)';
+    btn.classList.add('unsaved');
+    btn.style.display = '';
+  } else {
+    btn.textContent = '💾 Save & Execute Deep Dives';
+    btn.classList.remove('unsaved');
+    btn.style.display = anyRequested ? '' : 'none';
+  }
+}
+
+// ══════════════════════
+//  TOGGLE (LOCAL ONLY — no auto-save)
+// ══════════════════════
+function toggleDive(id, checked) {
   const localIdea = IDEAS.find(i => i.id === id);
   if (localIdea) {
     localIdea.deepDiveRequested = checked;
-    localIdea.deep_dive_requested_at = checked ? new Date().toISOString() : null;
+    // Only set timestamp if this is newly checked; preserve existing timestamp on uncheck
+    if (checked && !localIdea.deep_dive_requested_at) {
+      localIdea.deep_dive_requested_at = new Date().toISOString();
+    }
   }
   updateStats();
+  markUnsaved();
+}
 
-  showToast('Saving…', 'saving');
+// ══════════════════════
+//  SAVE & EXECUTE
+// ══════════════════════
+async function saveAndExecute() {
+  showToast('Saving to GitHub…', 'saving');
   try {
-    const { ideas, sha } = await fetchGitHubIdeas();
-    const target = ideas.find(i => i.id === id);
-    if (target) {
-      target.deepDiveRequested = checked;
-      target.deep_dive_requested_at = checked ? new Date().toISOString() : null;
-    }
-    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(ideas, null, 2))));
-    const putResp = await fetch(GH_API, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `token ${GH_TOKEN}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        message: `🔍 Deep dive ${checked ? 'requested' : 'cleared'} for ${id}`,
-        content: encoded,
-        sha
-      })
+    // 1. Fetch latest ideas.json from GitHub
+    const { ideas: ghIdeas, sha: ideasSha } = await fetchGitHubIdeas();
+
+    // 2. Identify newly requested deep dives (checked now, not in last snapshot)
+    const nowTs = new Date().toISOString();
+    const newlyOrdered = IDEAS.filter(i =>
+      i.deepDiveRequested && !savedDeepDiveSnapshot[i.id]
+    );
+
+    // 3. Merge all local changes into GitHub ideas
+    IDEAS.forEach(local => {
+      const gh = ghIdeas.find(g => g.id === local.id);
+      if (!gh) return;
+      // Deep dive state
+      gh.deepDiveRequested = local.deepDiveRequested || false;
+      if (local.deepDiveRequested) {
+        gh.deep_dive_requested_at = local.deep_dive_requested_at || nowTs;
+      } else {
+        gh.deep_dive_requested_at = null;
+      }
+      // Section / status
+      gh.section = local.section || 'pipeline';
+      if (local.vettedAt)  gh.vettedAt  = local.vettedAt;  else delete gh.vettedAt;
+      if (local.killedAt)  gh.killedAt  = local.killedAt;  else delete gh.killedAt;
     });
-    if (!putResp.ok) throw new Error(`GitHub PUT failed: ${putResp.status}`);
-    showToast('Saved to GitHub!', 'saved');
+
+    // 4. Save ideas.json
+    await putGitHubFile(
+      GH_PATH,
+      ghIdeas,
+      ideasSha,
+      `💾 Save & Execute deep dives — ${nowTs.slice(0,10)}`
+    );
+
+    // 5. Update deep-dive-orders.json
+    if (newlyOrdered.length > 0) {
+      const { content: existing, sha: ordersSha } = await fetchGitHubFile('data/deep-dive-orders.json');
+      const existingOrders = (existing && existing.orders) ? existing.orders : [];
+
+      const newOrders = newlyOrdered.map(i => ({
+        id: i.id,
+        name: i.name,
+        requestedAt: i.deep_dive_requested_at || nowTs,
+        status: 'ordered'
+      }));
+
+      // Merge: keep existing orders that aren't in newOrders, then append new
+      const mergedOrders = [
+        ...existingOrders.filter(e => !newOrders.find(n => n.id === e.id)),
+        ...newOrders
+      ];
+
+      const ordersPayload = { orders: mergedOrders, lastOrderedAt: nowTs };
+      await putGitHubFile(
+        'data/deep-dive-orders.json',
+        ordersPayload,
+        ordersSha,
+        `🔍 Deep dive orders: ${newOrders.map(o => o.name).join(', ')}`
+      );
+    }
+
+    // 6. Update snapshot and clear unsaved state
+    snapshotDeepDiveState();
+    hasUnsavedChanges = false;
+    updateSaveBtn();
+
+    // 7. Toast
+    if (newlyOrdered.length > 0) {
+      const names = newlyOrdered.map(i => i.name).join(', ');
+      showToast(`💾 Saved! Deep dives ordered for: ${names} — Rob will deliver today.`, 'saved');
+    } else {
+      showToast('💾 Saved! All changes synced to GitHub.', 'saved');
+    }
+
   } catch (err) {
-    console.error('GitHub sync failed:', err);
-    showToast('Sync failed — changes local only', 'error');
+    console.error('Save & Execute failed:', err);
+    showToast('Save failed — check console', 'error');
   }
 }
 
@@ -1397,7 +1564,7 @@ function renderCards(ideas) {
   // Bind checkboxes and admin buttons
   ideas.forEach(idea => {
     const cb = document.getElementById("dive-cb-" + idea.id);
-    if (cb) cb.addEventListener("change", () => toggleDive(idea.id, cb.checked));
+    if (cb) cb.addEventListener("change", () => { toggleDive(idea.id, cb.checked); });
 
     document.querySelectorAll(`[data-admin-id="${idea.id}"] .move-btn`).forEach(btn => {
       btn.addEventListener('click', () => moveIdea(btn.dataset.id, btn.dataset.to));
@@ -1488,15 +1655,18 @@ function cardHTML(idea) {
         <input type="checkbox" id="dive-cb-${idea.id}" ${checked} />
         <span>🔍 Request Deep Dive</span>
       </label>
-      ${adminBtns}
+      <div style="display:flex;align-items:center;gap:8px;">
+        ${idea.deepDiveUrl ? `<a href="${idea.deepDiveUrl}" target="_blank" style="background:rgba(88,166,255,.12);border:1px solid rgba(88,166,255,.4);color:var(--blue);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;text-decoration:none;">📄 View</a>` : ''}
+        ${adminBtns}
+      </div>
     </div>
   </div>`;
 }
 
 // ══════════════════════════════════════
-//  ADMIN: MOVE IDEAS
+//  ADMIN: MOVE IDEAS (deferred — saved on Save & Execute)
 // ══════════════════════════════════════
-async function moveIdea(id, newSection) {
+function moveIdea(id, newSection) {
   if (!isAdmin) return;
   const idea = IDEAS.find(i => i.id === id);
   if (!idea) return;
@@ -1504,52 +1674,26 @@ async function moveIdea(id, newSection) {
   const label = newSection === 'vetted' ? '✅ Vetted'
               : newSection === 'killed' ? '❌ Killed'
               : '📋 Pipeline';
-  showToast(`Moving to ${label}…`, 'saving');
 
-  try {
-    const { ideas, sha } = await fetchGitHubIdeas();
-    const target = ideas.find(i => i.id === id);
-    if (target) {
-      target.section = newSection;
-      if (newSection === 'vetted') { target.vettedAt = new Date().toISOString(); delete target.killedAt; }
-      if (newSection === 'killed') { target.killedAt = new Date().toISOString(); delete target.vettedAt; }
-      if (newSection === 'pipeline') { delete target.vettedAt; delete target.killedAt; }
-    }
-    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(ideas, null, 2))));
-    const putResp = await fetch(GH_API, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `token ${GH_TOKEN}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        message: `📦 Moved ${id} to ${newSection}`,
-        content: encoded,
-        sha
-      })
-    });
-    if (!putResp.ok) throw new Error(`GitHub PUT failed: ${putResp.status}`);
+  // Update local state only
+  idea.section = newSection;
+  if (newSection === 'vetted') { idea.vettedAt = new Date().toISOString(); delete idea.killedAt; }
+  if (newSection === 'killed') { idea.killedAt = new Date().toISOString(); delete idea.vettedAt; }
+  if (newSection === 'pipeline') { delete idea.vettedAt; delete idea.killedAt; }
 
-    // Update local state
-    idea.section = newSection;
-    if (newSection === 'vetted') { idea.vettedAt = new Date().toISOString(); delete idea.killedAt; }
-    if (newSection === 'killed') { idea.killedAt = new Date().toISOString(); delete idea.vettedAt; }
-    if (newSection === 'pipeline') { delete idea.vettedAt; delete idea.killedAt; }
+  showToast(`Moved to ${label} (unsaved — click Save & Execute to persist)`, 'saving');
+  setTimeout(() => { document.getElementById('sync-toast').className = ''; }, 2200);
 
-    showToast(`Moved to ${label}!`, 'saved');
-    updateStats();
-    applyFilters(); // re-render pipeline
-    // Re-render current section tabs if open
-    const activeTab = document.querySelector('.tab-btn.active');
-    if (activeTab) {
-      const tab = activeTab.dataset.tab;
-      if (tab === 'vetted')  renderVetted();
-      if (tab === 'killed')  renderKilled();
-    }
-  } catch (err) {
-    console.error('GitHub sync failed:', err);
-    showToast('Sync failed — try again', 'error');
+  markUnsaved();
+  updateStats();
+  applyFilters();
+
+  // Re-render current section tabs if open
+  const activeTab = document.querySelector('.tab-btn.active');
+  if (activeTab) {
+    const tab = activeTab.dataset.tab;
+    if (tab === 'vetted')  renderVetted();
+    if (tab === 'killed')  renderKilled();
   }
 }
 </script>
