@@ -1,0 +1,17 @@
+{
+  "orders": [
+    {
+      "id": "uf-007",
+      "name": "FieldOps Copilot",
+      "requestedAt": "2026-04-23T10:26:22.575Z",
+      "status": "ordered"
+    },
+    {
+      "id": "uf-011",
+      "name": "LossHarvest",
+      "requestedAt": "2026-04-23T10:29:39.115Z",
+      "status": "ordered"
+    }
+  ],
+  "lastOrderedAt": "2026-04-23T10:34:47.950Z"
+}
