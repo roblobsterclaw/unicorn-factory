@@ -932,17 +932,17 @@ let IDEAS = [
     name: "ContractWatch",
     subtitle: "AI Contract Surveillance & Risk Alerting",
     description: "Companies sign contracts and then forget about them — unt\n\n... [OUTPUT TRUNCATED - 5397 chars omitted out of 55397 total] ...\n\n rights. AI that understands these rights gets more valuable.",
-    revenue: null,
-    startupCost: null,
+    revenue: "",
+    startupCost: "",
     startupCostRaw: null,
     scale: null,
     eligible1202: null,
-    tam: null,
-    moat: null,
-    source: null,
-    gallagher: null,
-    arrPath: null,
-    futureProof: null,
+    tam: "",
+    moat: "",
+    source: "",
+    gallagher: "",
+    arrPath: "",
+    futureProof: "",
     section: "pipeline",
     deepDiveRequested: false,
     deep_dive_requested_at: null,
@@ -2232,11 +2232,11 @@ function applyFilters() {
 
   if (q) {
     ideas = ideas.filter(i =>
-      i.name.toLowerCase().includes(q) ||
-      i.subtitle.toLowerCase().includes(q) ||
-      i.description.toLowerCase().includes(q) ||
-      i.moat.toLowerCase().includes(q) ||
-      i.source.toLowerCase().includes(q) ||
+      (i.name || '').toLowerCase().includes(q) ||
+      (i.subtitle || '').toLowerCase().includes(q) ||
+      (i.description || '').toLowerCase().includes(q) ||
+      (i.moat || '').toLowerCase().includes(q) ||
+      (i.source || '').toLowerCase().includes(q) ||
       (i.tam || '').toLowerCase().includes(q) ||
       (i.revenue || '').toLowerCase().includes(q) ||
       (i.arrPath || '').toLowerCase().includes(q) ||
